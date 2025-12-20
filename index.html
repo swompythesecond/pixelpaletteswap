@@ -557,6 +557,21 @@
     <script type="module">
         import { parseGIF, decompressFrames } from 'https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm';
         
+        // Fetch and create blob URL for gif.js worker to avoid CORS issues
+        let gifWorkerBlobUrl = null;
+        async function getGifWorkerUrl() {
+            if (gifWorkerBlobUrl) return gifWorkerBlobUrl;
+            try {
+                const response = await fetch('https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js');
+                const blob = await response.blob();
+                gifWorkerBlobUrl = URL.createObjectURL(blob);
+                return gifWorkerBlobUrl;
+            } catch (e) {
+                console.error('Failed to load gif worker:', e);
+                throw e;
+            }
+        }
+        
         // State
         let originalFrames = [];
         let currentFrames = [];
@@ -1179,12 +1194,13 @@
             exportBtn.textContent = '⏳ Exporting...';
             
             try {
+                const workerUrl = await getGifWorkerUrl();
                 const gif = new GIF({
                     workers: 2,
                     quality: 1,
                     width: gifWidth,
                     height: gifHeight,
-                    workerScript: 'https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js'
+                    workerScript: workerUrl
                 });
                 
                 for (let i = 0; i < currentFrames.length; i++) {
