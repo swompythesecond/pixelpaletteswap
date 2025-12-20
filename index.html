@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Art GIF Palette Swap - Free Online Color Editor Tool</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Free online tool to swap colors in pixel art GIFs and images. Upload your sprite animations, edit color palettes, and export as GIF or PNG. Perfect for game developers and pixel artists.">
+    <meta name="keywords" content="pixel art, palette swap, color swap, GIF editor, sprite editor, pixel art tool, color palette, game development, sprite animation, PNG sequence, online tool, free">
+    <meta name="author" content="Pixel Palette Swap Tool">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Pixel Art GIF Palette Swap - Free Online Color Editor">
+    <meta property="og:description" content="Swap colors in pixel art GIFs and images instantly. Edit palettes, preview animations, and export as GIF or PNG sequence.">
+    <meta property="og:image" content="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Pixel Art GIF Palette Swap Tool">
+    <meta name="twitter:description" content="Free online tool to swap colors in pixel art GIFs and sprite animations. Perfect for game devs!">
+    
+    <!-- Additional SEO -->
+    <meta name="theme-color" content="#e94560">
+    <link rel="canonical" href="">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Pixel Art GIF Palette Swap",
+        "description": "Free online tool to swap colors in pixel art GIFs and images. Edit color palettes and export animations.",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Any",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "featureList": [
+            "GIF color palette editing",
+            "PNG sequence support",
+            "Multiple image upload",
+            "Color picker from image",
+            "Export as GIF or PNG",
+            "Save and load color presets"
+        ]
+    }
+    </script>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: #fff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #e94560;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .upload-area {
+            border: 3px dashed #e94560;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+        .upload-area:hover {
+            background: rgba(233, 69, 96, 0.1);
+            border-color: #ff6b6b;
+        }
+        .upload-area input {
+            display: none;
+        }
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+        }
+        @media (max-width: 800px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        .preview-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+        }
+        .preview-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            background: repeating-conic-gradient(#333 0% 25%, #444 0% 50%) 50% / 20px 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #previewCanvas {
+            max-width: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: #ff6b6b;
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .palette-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+        }
+        .palette-section h2 {
+            margin-top: 0;
+            color: #e94560;
+            font-size: 18px;
+        }
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .color-item {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .color-item:hover {
+            transform: scale(1.1);
+            z-index: 1;
+        }
+        .color-item.selected {
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        .color-item .color-code {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            background: rgba(0,0,0,0.8);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        .color-item:hover .color-code {
+            opacity: 1;
+        }
+        .swap-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .swap-section h3 {
+            margin-top: 0;
+            font-size: 14px;
+            color: #aaa;
+        }
+        .swap-preview {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .swap-color {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            border: 2px solid #fff;
+        }
+        .swap-arrow {
+            font-size: 24px;
+        }
+        .color-picker-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .color-picker-wrapper input[type="color"] {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+        }
+        .color-picker-wrapper label {
+            font-size: 12px;
+            color: #aaa;
+        }
+        .frame-info {
+            text-align: center;
+            margin-top: 10px;
+            color: #aaa;
+            font-size: 14px;
+        }
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .zoom-controls label {
+            font-size: 14px;
+        }
+        .zoom-controls input[type="range"] {
+            width: 100px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #e94560;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Info Section Styles */
+        .info-section {
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .info-section h2 {
+            text-align: center;
+            color: #e94560;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        .info-section > p {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 40px;
+            line-height: 1.7;
+            color: #ccc;
+            font-size: 16px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        .info-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .info-card h3 {
+            color: #e94560;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .info-card ul, .info-card ol {
+            margin: 0;
+            padding-left: 20px;
+            color: #bbb;
+            line-height: 1.8;
+        }
+        .info-card li {
+            margin-bottom: 8px;
+        }
+        .info-card strong {
+            color: #fff;
+        }
+        .info-faq {
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+        }
+        .info-faq h3 {
+            color: #e94560;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .info-faq details {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .info-faq summary {
+            padding: 15px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #fff;
+            list-style: none;
+        }
+        .info-faq summary::-webkit-details-marker {
+            display: none;
+        }
+        .info-faq summary::before {
+            content: '▶ ';
+            color: #e94560;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        .info-faq details[open] summary::before {
+            content: '▼ ';
+        }
+        .info-faq details p {
+            padding: 0 20px 15px;
+            margin: 0;
+            color: #aaa;
+            line-height: 1.7;
+        }
+        .footer-note {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            padding: 20px 0;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Pixel Art GIF Palette Swap</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <p>Click or drag & drop files here</p>
+            <p style="font-size: 12px; color: #888; margin-top: 5px;">Supports: GIF, PNG, JPG, WebP (single or multiple images)</p>
+            <input type="file" id="fileInput" accept=".gif,.png,.jpg,.jpeg,.webp" multiple>
+        </div>
+
+        <div class="main-content hidden" id="mainContent">
+            <div class="preview-section">
+                <div class="preview-container">
+                    <canvas id="previewCanvas"></canvas>
+                </div>
+                <p style="text-align: center; font-size: 12px; color: #888; margin: 5px 0;">💡 Click on the image to pick a color</p>
+                <div class="frame-info" id="frameInfo">Frame 1 / 1</div>
+                <div class="speed-controls" style="display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 5px;">
+                    <label style="font-size: 14px;">Speed: <span id="speedValue">100</span>ms</label>
+                    <input type="range" id="speedSlider" min="16" max="500" value="100">
+                </div>
+                <div class="zoom-controls">
+                    <label>Zoom: <span id="zoomValue">4</span>x</label>
+                    <input type="range" id="zoomSlider" min="1" max="10" value="4">
+                </div>
+                <div class="controls">
+                    <button id="playPauseBtn">⏸️ Pause</button>
+                    <button id="prevFrameBtn">⏮️ Prev</button>
+                    <button id="nextFrameBtn">⏭️ Next</button>
+                    <button id="exportBtn">💾 Export GIF</button>
+                    <button id="exportPngBtn">🖼️ Export PNGs</button>
+                </div>
+            </div>
+
+            <div class="palette-section">
+                <h2>🎨 Color Palette (<span id="colorCount">0</span> colors)</h2>
+                <div class="palette-grid" id="paletteGrid"></div>
+                
+                <div class="swap-section">
+                    <h3>Color Swap</h3>
+                    <p style="font-size: 12px; color: #888;">Select a color from the palette, then pick a new color below</p>
+                    <div class="swap-preview">
+                        <div class="swap-color" id="originalColor" style="background: #888;"></div>
+                        <span class="swap-arrow">➡️</span>
+                        <div class="color-picker-wrapper">
+                            <input type="color" id="newColorPicker" value="#ff0000">
+                            <label>New Color</label>
+                        </div>
+                    </div>
+                    <button id="applySwapBtn" style="width: 100%;" disabled>Apply Color Swap</button>
+                    <button id="resetBtn" style="width: 100%; margin-top: 10px; background: #555;">Reset All Changes</button>
+                </div>
+                
+                <div class="preset-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <h3 style="margin-top: 0; font-size: 14px; color: #aaa;">💾 Color Swap Presets</h3>
+                    <p style="font-size: 11px; color: #666; margin: 5px 0 10px;">Save & load color mappings to apply to other animations</p>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button id="exportPresetBtn" style="flex: 1; padding: 8px 12px; font-size: 12px;">📤 Export</button>
+                        <button id="importPresetBtn" style="flex: 1; padding: 8px 12px; font-size: 12px;">📥 Import</button>
+                    </div>
+                    <input type="file" id="importPresetInput" accept=".json" style="display: none;">
+                    <div id="swapHistory" style="margin-top: 10px; font-size: 11px; color: #888; max-height: 100px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading hidden" id="loading">
+            <p>Processing GIF...</p>
+        </div>
+
+        <!-- Info Section for SEO -->
+        <footer class="info-section">
+            <h2>🎨 About Pixel Art Palette Swap Tool</h2>
+            <p>
+                This free online tool lets you easily swap colors in pixel art GIFs, PNGs, and other image formats. 
+                Perfect for <strong>game developers</strong>, <strong>pixel artists</strong>, and <strong>sprite designers</strong> 
+                who want to create color variations of their characters and assets without redrawing everything.
+            </p>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>🖼️ How It Works</h3>
+                    <ol>
+                        <li><strong>Upload</strong> your pixel art GIF, PNG, or multiple images</li>
+                        <li><strong>View</strong> the automatically extracted color palette</li>
+                        <li><strong>Click</strong> a color in the palette or pick directly from the image</li>
+                        <li><strong>Choose</strong> a new color using the color picker</li>
+                        <li><strong>Apply</strong> the swap - all pixels of that color change instantly</li>
+                        <li><strong>Export</strong> as GIF or PNG sequence when done</li>
+                    </ol>
+                </div>
+
+                <div class="info-card">
+                    <h3>✨ Features</h3>
+                    <ul>
+                        <li><strong>GIF Support</strong> - Load animated GIFs and edit all frames at once</li>
+                        <li><strong>Image Sequences</strong> - Upload multiple PNGs as animation frames</li>
+                        <li><strong>Color Picker</strong> - Click directly on the image to select colors</li>
+                        <li><strong>Live Preview</strong> - See changes in real-time with animation playback</li>
+                        <li><strong>Zoom Control</strong> - Pixel-perfect viewing at any scale</li>
+                        <li><strong>Save Presets</strong> - Export color mappings to reuse on other sprites</li>
+                        <li><strong>ZIP Export</strong> - Download PNG sequences as a convenient ZIP file</li>
+                    </ul>
+                </div>
+
+                <div class="info-card">
+                    <h3>🎮 Use Cases</h3>
+                    <ul>
+                        <li><strong>Character Variants</strong> - Create different colored versions of game characters</li>
+                        <li><strong>Team Colors</strong> - Make red/blue team variants for multiplayer games</li>
+                        <li><strong>Seasonal Themes</strong> - Quickly recolor sprites for holiday events</li>
+                        <li><strong>Palette Experiments</strong> - Try different color schemes before committing</li>
+                        <li><strong>Batch Processing</strong> - Apply the same palette to multiple animations</li>
+                        <li><strong>Accessibility</strong> - Create high-contrast versions of your art</li>
+                    </ul>
+                </div>
+
+                <div class="info-card">
+                    <h3>💡 Tips</h3>
+                    <ul>
+                        <li>Works best with <strong>indexed color</strong> pixel art (limited palette)</li>
+                        <li>Use the <strong>preset feature</strong> to apply same swaps to walk, run, attack animations</li>
+                        <li>Adjust <strong>animation speed</strong> when working with image sequences</li>
+                        <li>All processing happens <strong>in your browser</strong> - no files uploaded to servers</li>
+                        <li><strong>Reset</strong> button restores original colors if you make mistakes</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="info-faq">
+                <h3>❓ Frequently Asked Questions</h3>
+                
+                <details>
+                    <summary>What file formats are supported?</summary>
+                    <p>You can upload GIF (animated or static), PNG, JPG, and WebP images. For animations, you can either use a GIF or upload multiple images that will be treated as animation frames.</p>
+                </details>
+                
+                <details>
+                    <summary>Is there a file size limit?</summary>
+                    <p>Since everything runs in your browser, there's no server-side limit. However, very large files or GIFs with many frames may be slower to process depending on your device.</p>
+                </details>
+                
+                <details>
+                    <summary>Are my images uploaded anywhere?</summary>
+                    <p>No! This tool runs entirely in your browser. Your images never leave your computer - all processing is done locally using JavaScript.</p>
+                </details>
+                
+                <details>
+                    <summary>How do color presets work?</summary>
+                    <p>When you swap colors, the tool remembers the original → new color mapping. You can export this as a JSON file and import it when editing another sprite. The tool will find matching original colors and apply the same swaps.</p>
+                </details>
+                
+                <details>
+                    <summary>Why are some colors not being detected?</summary>
+                    <p>The tool only detects non-transparent pixels. If your image uses anti-aliasing or gradients, you may see many similar colors. Pixel art with a clean, limited palette works best.</p>
+                </details>
+            </div>
+
+            <p class="footer-note">
+                Made with ❤️ for the pixel art community. Free to use, no account required.
+            </p>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script type="module">
+        import { parseGIF, decompressFrames } from 'https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm';
+        
+        // State
+        let originalFrames = [];
+        let currentFrames = [];
+        let frameDelays = [];
+        let gifWidth = 0;
+        let gifHeight = 0;
+        let currentFrameIndex = 0;
+        let isPlaying = true;
+        let animationInterval = null;
+        let selectedColor = null;
+        let colorPalette = new Map();
+        let zoom = 4;
+        let colorSwapHistory = []; // Track all color swaps made
+        let customFrameDelay = 100; // Default delay for image sequences
+
+        // DOM Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const mainContent = document.getElementById('mainContent');
+        const loading = document.getElementById('loading');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const ctx = previewCanvas.getContext('2d');
+        const paletteGrid = document.getElementById('paletteGrid');
+        const colorCount = document.getElementById('colorCount');
+        const frameInfo = document.getElementById('frameInfo');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const prevFrameBtn = document.getElementById('prevFrameBtn');
+        const nextFrameBtn = document.getElementById('nextFrameBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const exportPngBtn = document.getElementById('exportPngBtn');
+        const originalColorEl = document.getElementById('originalColor');
+        const newColorPicker = document.getElementById('newColorPicker');
+        const applySwapBtn = document.getElementById('applySwapBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomValue = document.getElementById('zoomValue');
+        const exportPresetBtn = document.getElementById('exportPresetBtn');
+        const importPresetBtn = document.getElementById('importPresetBtn');
+        const importPresetInput = document.getElementById('importPresetInput');
+        const swapHistoryEl = document.getElementById('swapHistory');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+
+        // Event Listeners
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ff6b6b';
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#e94560';
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#e94560';
+            const files = Array.from(e.dataTransfer.files);
+            handleFiles(files);
+        });
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleFiles(files);
+        });
+
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        prevFrameBtn.addEventListener('click', () => { stopAnimation(); showFrame(currentFrameIndex - 1); });
+        nextFrameBtn.addEventListener('click', () => { stopAnimation(); showFrame(currentFrameIndex + 1); });
+        exportBtn.addEventListener('click', exportGif);
+        exportPngBtn.addEventListener('click', exportPngSequence);
+        applySwapBtn.addEventListener('click', applyColorSwap);
+        resetBtn.addEventListener('click', resetChanges);
+        exportPresetBtn.addEventListener('click', exportPreset);
+        importPresetBtn.addEventListener('click', () => importPresetInput.click());
+        importPresetInput.addEventListener('change', importPreset);
+        zoomSlider.addEventListener('input', (e) => {
+            zoom = parseInt(e.target.value);
+            zoomValue.textContent = zoom;
+            updateCanvasSize();
+            renderCurrentFrame();
+        });
+        speedSlider.addEventListener('input', (e) => {
+            customFrameDelay = parseInt(e.target.value);
+            speedValue.textContent = customFrameDelay;
+            // Update all frame delays for image sequences
+            frameDelays = frameDelays.map(() => customFrameDelay);
+        });
+
+        // Color picker from canvas
+        previewCanvas.addEventListener('click', (e) => {
+            if (currentFrames.length === 0) return;
+            
+            const rect = previewCanvas.getBoundingClientRect();
+            const scaleX = previewCanvas.width / rect.width;
+            const scaleY = previewCanvas.height / rect.height;
+            
+            const canvasX = Math.floor((e.clientX - rect.left) * scaleX);
+            const canvasY = Math.floor((e.clientY - rect.top) * scaleY);
+            
+            // Convert to original image coordinates
+            const imgX = Math.floor(canvasX / zoom);
+            const imgY = Math.floor(canvasY / zoom);
+            
+            if (imgX < 0 || imgX >= gifWidth || imgY < 0 || imgY >= gifHeight) return;
+            
+            // Get pixel color from current frame
+            const frameData = currentFrames[currentFrameIndex];
+            const pixelIndex = (imgY * gifWidth + imgX) * 4;
+            const r = frameData[pixelIndex];
+            const g = frameData[pixelIndex + 1];
+            const b = frameData[pixelIndex + 2];
+            const a = frameData[pixelIndex + 3];
+            
+            if (a === 0) return; // Transparent pixel
+            
+            const colorKey = `${r},${g},${b}`;
+            
+            // Find and select this color in the palette
+            const colorItem = document.querySelector(`.color-item[data-color="${colorKey}"]`);
+            if (colorItem) {
+                selectColor(colorKey, colorItem);
+                // Scroll the color into view in the palette
+                colorItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+
+        // Change cursor to indicate color picking
+        previewCanvas.style.cursor = 'crosshair';
+
+        // Handle uploaded files - determine type and process accordingly
+        async function handleFiles(files) {
+            if (files.length === 0) return;
+            
+            // Sort files by name for consistent ordering
+            files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+            
+            const firstFile = files[0];
+            
+            if (files.length === 1 && firstFile.type === 'image/gif') {
+                // Single GIF file
+                await loadGif(firstFile);
+            } else {
+                // Single image or multiple images - treat as image sequence
+                const imageFiles = files.filter(f => 
+                    f.type.startsWith('image/') && f.type !== 'image/gif'
+                );
+                
+                // Also check if it's a single GIF among other files, load just images
+                const nonGifImages = files.filter(f => 
+                    f.type.startsWith('image/')
+                );
+                
+                if (nonGifImages.length > 0) {
+                    await loadImages(nonGifImages);
+                } else {
+                    alert('Please upload image files (PNG, JPG, WebP) or a GIF file.');
+                }
+            }
+        }
+
+        // Load one or more static images as frames
+        async function loadImages(files) {
+            loading.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+            
+            try {
+                originalFrames = [];
+                currentFrames = [];
+                frameDelays = [];
+                colorSwapHistory = [];
+                
+                let maxWidth = 0;
+                let maxHeight = 0;
+                const loadedImages = [];
+                
+                // Load all images first to get dimensions
+                for (const file of files) {
+                    const img = await loadImageFromFile(file);
+                    loadedImages.push(img);
+                    maxWidth = Math.max(maxWidth, img.width);
+                    maxHeight = Math.max(maxHeight, img.height);
+                }
+                
+                gifWidth = maxWidth;
+                gifHeight = maxHeight;
+                
+                // Convert each image to frame data
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = maxWidth;
+                tempCanvas.height = maxHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                for (const img of loadedImages) {
+                    // Clear canvas (transparent background)
+                    tempCtx.clearRect(0, 0, maxWidth, maxHeight);
+                    // Draw image centered if sizes differ
+                    const offsetX = Math.floor((maxWidth - img.width) / 2);
+                    const offsetY = Math.floor((maxHeight - img.height) / 2);
+                    tempCtx.drawImage(img, offsetX, offsetY);
+                    
+                    const imageData = tempCtx.getImageData(0, 0, maxWidth, maxHeight);
+                    originalFrames.push(new Uint8ClampedArray(imageData.data));
+                    currentFrames.push(new Uint8ClampedArray(imageData.data));
+                    frameDelays.push(customFrameDelay);
+                }
+                
+                updateCanvasSize();
+                extractPalette();
+                showFrame(0);
+                
+                if (currentFrames.length > 1) {
+                    startAnimation();
+                } else {
+                    stopAnimation();
+                }
+                
+                loading.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                updateSwapHistoryDisplay();
+                
+            } catch (error) {
+                console.error('Error loading images:', error);
+                alert('Error loading images: ' + error.message);
+                loading.classList.add('hidden');
+            }
+        }
+
+        // Helper to load an image from a file
+        function loadImageFromFile(file) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    URL.revokeObjectURL(img.src);
+                    resolve(img);
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(img.src);
+                    reject(new Error(`Failed to load image: ${file.name}`));
+                };
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        async function loadGif(file) {
+            loading.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+            colorSwapHistory = [];
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const gif = parseGIF(arrayBuffer);
+                const frames = decompressFrames(gif, true);
+                
+                if (frames.length === 0) {
+                    alert('Could not parse GIF frames');
+                    return;
+                }
+
+                gifWidth = frames[0].dims.width;
+                gifHeight = frames[0].dims.height;
+                
+                // Store original frames and delays
+                originalFrames = [];
+                currentFrames = [];
+                frameDelays = [];
+                
+                // Create a full canvas for compositing
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = gif.lsd.width;
+                tempCanvas.height = gif.lsd.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                for (let i = 0; i < frames.length; i++) {
+                    const frame = frames[i];
+                    
+                    // Handle disposal method from previous frame
+                    if (i > 0) {
+                        const prevFrame = frames[i - 1];
+                        if (prevFrame.disposalType === 2) {
+                            // Restore to background
+                            tempCtx.clearRect(prevFrame.dims.left, prevFrame.dims.top, 
+                                            prevFrame.dims.width, prevFrame.dims.height);
+                        } else if (prevFrame.disposalType === 3) {
+                            // Restore to previous - would need to save state
+                            // For simplicity, just clear
+                            tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                        }
+                    }
+                    
+                    // Draw current frame patch
+                    const frameImageData = new ImageData(
+                        new Uint8ClampedArray(frame.patch),
+                        frame.dims.width,
+                        frame.dims.height
+                    );
+                    
+                    const patchCanvas = document.createElement('canvas');
+                    patchCanvas.width = frame.dims.width;
+                    patchCanvas.height = frame.dims.height;
+                    patchCanvas.getContext('2d').putImageData(frameImageData, 0, 0);
+                    
+                    tempCtx.drawImage(patchCanvas, frame.dims.left, frame.dims.top);
+                    
+                    // Get full frame image data
+                    const fullFrameData = tempCtx.getImageData(0, 0, gif.lsd.width, gif.lsd.height);
+                    originalFrames.push(new Uint8ClampedArray(fullFrameData.data));
+                    currentFrames.push(new Uint8ClampedArray(fullFrameData.data));
+                    frameDelays.push(frame.delay || 100);
+                }
+                
+                gifWidth = gif.lsd.width;
+                gifHeight = gif.lsd.height;
+                
+                updateCanvasSize();
+                extractPalette();
+                showFrame(0);
+                startAnimation();
+                
+                loading.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                updateSwapHistoryDisplay();
+                
+            } catch (error) {
+                console.error('Error loading GIF:', error);
+                alert('Error loading GIF: ' + error.message);
+                loading.classList.add('hidden');
+            }
+        }
+
+        function updateCanvasSize() {
+            previewCanvas.width = gifWidth * zoom;
+            previewCanvas.height = gifHeight * zoom;
+            ctx.imageSmoothingEnabled = false;
+        }
+
+        function extractPalette() {
+            colorPalette.clear();
+            
+            for (const frameData of currentFrames) {
+                for (let i = 0; i < frameData.length; i += 4) {
+                    const r = frameData[i];
+                    const g = frameData[i + 1];
+                    const b = frameData[i + 2];
+                    const a = frameData[i + 3];
+                    
+                    if (a > 0) { // Only non-transparent pixels
+                        const colorKey = `${r},${g},${b}`;
+                        if (!colorPalette.has(colorKey)) {
+                            colorPalette.set(colorKey, { r, g, b, count: 1 });
+                        } else {
+                            colorPalette.get(colorKey).count++;
+                        }
+                    }
+                }
+            }
+            
+            renderPalette();
+        }
+
+        function renderPalette() {
+            paletteGrid.innerHTML = '';
+            colorCount.textContent = colorPalette.size;
+            
+            // Sort by usage count
+            const sortedColors = [...colorPalette.entries()].sort((a, b) => b[1].count - a[1].count);
+            
+            for (const [colorKey, colorData] of sortedColors) {
+                const div = document.createElement('div');
+                div.className = 'color-item';
+                div.style.background = `rgb(${colorData.r}, ${colorData.g}, ${colorData.b})`;
+                div.dataset.color = colorKey;
+                
+                const codeSpan = document.createElement('span');
+                codeSpan.className = 'color-code';
+                codeSpan.textContent = rgbToHex(colorData.r, colorData.g, colorData.b);
+                div.appendChild(codeSpan);
+                
+                div.addEventListener('click', () => selectColor(colorKey, div));
+                paletteGrid.appendChild(div);
+            }
+        }
+
+        function selectColor(colorKey, element) {
+            // Remove previous selection
+            document.querySelectorAll('.color-item.selected').forEach(el => el.classList.remove('selected'));
+            
+            // Select new color
+            element.classList.add('selected');
+            selectedColor = colorKey;
+            
+            const [r, g, b] = colorKey.split(',').map(Number);
+            originalColorEl.style.background = `rgb(${r}, ${g}, ${b})`;
+            newColorPicker.value = rgbToHex(r, g, b);
+            
+            applySwapBtn.disabled = false;
+        }
+
+        function applyColorSwap() {
+            if (!selectedColor) return;
+            
+            const [oldR, oldG, oldB] = selectedColor.split(',').map(Number);
+            const newHex = newColorPicker.value;
+            const newR = parseInt(newHex.slice(1, 3), 16);
+            const newG = parseInt(newHex.slice(3, 5), 16);
+            const newB = parseInt(newHex.slice(5, 7), 16);
+            
+            // Skip if colors are the same
+            if (oldR === newR && oldG === newG && oldB === newB) return;
+            
+            // Record the swap in history (from original color)
+            const oldHex = rgbToHex(oldR, oldG, oldB);
+            colorSwapHistory.push({
+                from: { r: oldR, g: oldG, b: oldB, hex: oldHex },
+                to: { r: newR, g: newG, b: newB, hex: newHex }
+            });
+            
+            // Apply swap to all frames
+            for (const frameData of currentFrames) {
+                for (let i = 0; i < frameData.length; i += 4) {
+                    if (frameData[i] === oldR && frameData[i + 1] === oldG && frameData[i + 2] === oldB) {
+                        frameData[i] = newR;
+                        frameData[i + 1] = newG;
+                        frameData[i + 2] = newB;
+                    }
+                }
+            }
+            
+            // Update palette
+            extractPalette();
+            renderCurrentFrame();
+            updateSwapHistoryDisplay();
+            
+            // Clear selection
+            selectedColor = null;
+            applySwapBtn.disabled = true;
+            originalColorEl.style.background = '#888';
+        }
+
+        function resetChanges() {
+            for (let i = 0; i < originalFrames.length; i++) {
+                currentFrames[i] = new Uint8ClampedArray(originalFrames[i]);
+            }
+            colorSwapHistory = [];
+            extractPalette();
+            renderCurrentFrame();
+            updateSwapHistoryDisplay();
+            selectedColor = null;
+            applySwapBtn.disabled = true;
+            originalColorEl.style.background = '#888';
+        }
+
+        function updateSwapHistoryDisplay() {
+            if (colorSwapHistory.length === 0) {
+                swapHistoryEl.innerHTML = '<em>No swaps yet</em>';
+                return;
+            }
+            
+            swapHistoryEl.innerHTML = colorSwapHistory.map((swap, i) => 
+                `<div style="display: flex; align-items: center; gap: 5px; margin: 3px 0;">
+                    <span style="width: 14px; height: 14px; background: ${swap.from.hex}; border: 1px solid #555; border-radius: 2px;"></span>
+                    →
+                    <span style="width: 14px; height: 14px; background: ${swap.to.hex}; border: 1px solid #555; border-radius: 2px;"></span>
+                    <span style="color: #666;">${swap.from.hex} → ${swap.to.hex}</span>
+                </div>`
+            ).join('');
+        }
+
+        function exportPreset() {
+            if (colorSwapHistory.length === 0) {
+                alert('No color swaps to export! Make some color changes first.');
+                return;
+            }
+            
+            const preset = {
+                name: 'Color Swap Preset',
+                created: new Date().toISOString(),
+                swaps: colorSwapHistory
+            };
+            
+            const blob = new Blob([JSON.stringify(preset, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'color-swap-preset.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        async function importPreset(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            try {
+                const text = await file.text();
+                const preset = JSON.parse(text);
+                
+                if (!preset.swaps || !Array.isArray(preset.swaps)) {
+                    alert('Invalid preset file format');
+                    return;
+                }
+                
+                // First reset to original
+                for (let i = 0; i < originalFrames.length; i++) {
+                    currentFrames[i] = new Uint8ClampedArray(originalFrames[i]);
+                }
+                colorSwapHistory = [];
+                
+                let appliedCount = 0;
+                let skippedCount = 0;
+                
+                // Apply each swap from the preset
+                for (const swap of preset.swaps) {
+                    const { from, to } = swap;
+                    let found = false;
+                    
+                    // Check if this color exists in current frames
+                    for (const frameData of currentFrames) {
+                        for (let i = 0; i < frameData.length; i += 4) {
+                            if (frameData[i] === from.r && frameData[i + 1] === from.g && frameData[i + 2] === from.b) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (found) break;
+                    }
+                    
+                    if (found) {
+                        // Apply this swap
+                        for (const frameData of currentFrames) {
+                            for (let i = 0; i < frameData.length; i += 4) {
+                                if (frameData[i] === from.r && frameData[i + 1] === from.g && frameData[i + 2] === from.b) {
+                                    frameData[i] = to.r;
+                                    frameData[i + 1] = to.g;
+                                    frameData[i + 2] = to.b;
+                                }
+                            }
+                        }
+                        colorSwapHistory.push(swap);
+                        appliedCount++;
+                    } else {
+                        skippedCount++;
+                    }
+                }
+                
+                extractPalette();
+                renderCurrentFrame();
+                updateSwapHistoryDisplay();
+                
+                alert(`Preset applied!\n✅ ${appliedCount} color swaps applied\n⏭️ ${skippedCount} colors not found (skipped)`);
+                
+            } catch (error) {
+                console.error('Error importing preset:', error);
+                alert('Error reading preset file: ' + error.message);
+            }
+            
+            // Reset file input
+            e.target.value = '';
+        }
+
+        function showFrame(index) {
+            if (currentFrames.length === 0) return;
+            
+            currentFrameIndex = ((index % currentFrames.length) + currentFrames.length) % currentFrames.length;
+            frameInfo.textContent = `Frame ${currentFrameIndex + 1} / ${currentFrames.length}`;
+            renderCurrentFrame();
+        }
+
+        function renderCurrentFrame() {
+            if (currentFrames.length === 0) return;
+            
+            const frameData = currentFrames[currentFrameIndex];
+            const imageData = new ImageData(new Uint8ClampedArray(frameData), gifWidth, gifHeight);
+            
+            // Create temp canvas at original size
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = gifWidth;
+            tempCanvas.height = gifHeight;
+            tempCanvas.getContext('2d').putImageData(imageData, 0, 0);
+            
+            // Clear and draw scaled
+            ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            ctx.drawImage(tempCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+        }
+
+        function startAnimation() {
+            if (animationInterval) clearInterval(animationInterval);
+            if (currentFrames.length <= 1) return;
+            
+            isPlaying = true;
+            playPauseBtn.textContent = '⏸️ Pause';
+            
+            let lastTime = 0;
+            const animate = () => {
+                if (!isPlaying) return;
+                
+                const now = performance.now();
+                if (now - lastTime >= frameDelays[currentFrameIndex]) {
+                    showFrame(currentFrameIndex + 1);
+                    lastTime = now;
+                }
+                requestAnimationFrame(animate);
+            };
+            requestAnimationFrame(animate);
+        }
+
+        function stopAnimation() {
+            isPlaying = false;
+            playPauseBtn.textContent = '▶️ Play';
+        }
+
+        function togglePlayPause() {
+            if (isPlaying) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        }
+
+        async function exportGif() {
+            exportBtn.disabled = true;
+            exportBtn.textContent = '⏳ Exporting...';
+            
+            try {
+                const gif = new GIF({
+                    workers: 2,
+                    quality: 1,
+                    width: gifWidth,
+                    height: gifHeight,
+                    workerScript: 'https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js'
+                });
+                
+                for (let i = 0; i < currentFrames.length; i++) {
+                    const frameData = currentFrames[i];
+                    const imageData = new ImageData(new Uint8ClampedArray(frameData), gifWidth, gifHeight);
+                    
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = gifWidth;
+                    tempCanvas.height = gifHeight;
+                    tempCanvas.getContext('2d').putImageData(imageData, 0, 0);
+                    
+                    gif.addFrame(tempCanvas, { delay: frameDelays[i], copy: true });
+                }
+                
+                gif.on('finished', (blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'palette-swapped.gif';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    
+                    exportBtn.disabled = false;
+                    exportBtn.textContent = '💾 Export GIF';
+                });
+                
+                gif.render();
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting GIF: ' + error.message);
+                exportBtn.disabled = false;
+                exportBtn.textContent = '💾 Export GIF';
+            }
+        }
+
+        async function exportPngSequence() {
+            exportPngBtn.disabled = true;
+            exportPngBtn.textContent = '⏳ Exporting...';
+            
+            try {
+                // For single frame, just download one PNG
+                if (currentFrames.length === 1) {
+                    const frameData = currentFrames[0];
+                    const imageData = new ImageData(new Uint8ClampedArray(frameData), gifWidth, gifHeight);
+                    
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = gifWidth;
+                    tempCanvas.height = gifHeight;
+                    tempCanvas.getContext('2d').putImageData(imageData, 0, 0);
+                    
+                    const url = tempCanvas.toDataURL('image/png');
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'palette-swapped.png';
+                    a.click();
+                } else {
+                    // Multiple frames - create a zip file using JSZip
+                    const zip = new JSZip();
+                    const folder = zip.folder('frames');
+                    
+                    for (let i = 0; i < currentFrames.length; i++) {
+                        const frameData = currentFrames[i];
+                        const imageData = new ImageData(new Uint8ClampedArray(frameData), gifWidth, gifHeight);
+                        
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = gifWidth;
+                        tempCanvas.height = gifHeight;
+                        tempCanvas.getContext('2d').putImageData(imageData, 0, 0);
+                        
+                        // Get PNG data as base64
+                        const dataUrl = tempCanvas.toDataURL('image/png');
+                        const base64Data = dataUrl.split(',')[1];
+                        
+                        // Add to zip
+                        folder.file(`frame-${String(i + 1).padStart(4, '0')}.png`, base64Data, { base64: true });
+                    }
+                    
+                    // Generate and download zip
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    const url = URL.createObjectURL(zipBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'palette-swapped-frames.zip';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+                
+                exportPngBtn.disabled = false;
+                exportPngBtn.textContent = '🖼️ Export PNGs';
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting PNGs: ' + error.message);
+                exportPngBtn.disabled = false;
+                exportPngBtn.textContent = '🖼️ Export PNGs';
+            }
+        }
+
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+        }
+    </script>
+</body>
+</html>
