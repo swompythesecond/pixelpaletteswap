@@ -406,8 +406,8 @@
                 <p style="text-align: center; font-size: 12px; color: #888; margin: 5px 0;">💡 Click on the image to pick a color</p>
                 <div class="frame-info" id="frameInfo">Frame 1 / 1</div>
                 <div class="speed-controls" style="display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 5px;">
-                    <label style="font-size: 14px;">Speed: <span id="speedValue">100</span>ms</label>
-                    <input type="range" id="speedSlider" min="16" max="500" value="100">
+                    <label style="font-size: 14px;">FPS: <span id="speedValue">10</span></label>
+                    <input type="range" id="speedSlider" min="1" max="60" value="10">
                 </div>
                 <div class="zoom-controls">
                     <label>Zoom: <span id="zoomValue">4</span>x</label>
@@ -570,7 +570,7 @@
         let colorPalette = new Map();
         let zoom = 4;
         let colorSwapHistory = []; // Track all color swaps made
-        let customFrameDelay = 100; // Default delay for image sequences
+        let customFrameDelay = 100; // Default delay for image sequences (10 FPS)
 
         // DOM Elements
         const uploadArea = document.getElementById('uploadArea');
@@ -637,8 +637,9 @@
             renderCurrentFrame();
         });
         speedSlider.addEventListener('input', (e) => {
-            customFrameDelay = parseInt(e.target.value);
-            speedValue.textContent = customFrameDelay;
+            const fps = parseInt(e.target.value);
+            customFrameDelay = Math.round(1000 / fps);
+            speedValue.textContent = fps;
             // Update all frame delays for image sequences
             frameDelays = frameDelays.map(() => customFrameDelay);
         });
