@@ -385,6 +385,67 @@
             padding: 20px 0;
             border-top: 1px solid rgba(255,255,255,0.05);
         }
+        
+        /* Palette Source Styles */
+        .palette-source-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .palette-source-section h3 {
+            margin-top: 0;
+            font-size: 14px;
+            color: #aaa;
+        }
+        .palette-source-upload {
+            border: 2px dashed #555;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        .palette-source-upload:hover {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+        }
+        .palette-source-upload.has-image {
+            border-style: solid;
+            border-color: #4caf50;
+        }
+        .palette-source-preview {
+            max-width: 100%;
+            max-height: 80px;
+            border-radius: 4px;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            margin-bottom: 8px;
+        }
+        .source-palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+            gap: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .source-color-item {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .source-color-item:hover {
+            transform: scale(1.15);
+            z-index: 1;
+            border-color: #fff;
+        }
+        .source-color-item.selected {
+            border-color: #e94560;
+            box-shadow: 0 0 8px rgba(233, 69, 96, 0.7);
+        }
     </style>
 </head>
 <body>
@@ -434,6 +495,7 @@
                         <span class="swap-arrow">➡️</span>
                         <div class="color-picker-wrapper">
                             <input type="color" id="newColorPicker" value="#ff0000">
+                            <input type="text" id="newColorHex" value="#ff0000" maxlength="7" placeholder="#ff0000" style="width: 70px; padding: 6px 8px; border: 1px solid #555; border-radius: 4px; background: #1a1a2e; color: #fff; font-family: monospace; text-transform: uppercase;">
                             <label>New Color</label>
                         </div>
                     </div>
@@ -450,6 +512,23 @@
                     </div>
                     <input type="file" id="importPresetInput" accept=".json" style="display: none;">
                     <div id="swapHistory" style="margin-top: 10px; font-size: 11px; color: #888; max-height: 100px; overflow-y: auto;"></div>
+                </div>
+                
+                <div class="palette-source-section">
+                    <h3>🖼️ Import Palette from Image</h3>
+                    <p style="font-size: 11px; color: #666; margin: 5px 0 10px;">Upload an image to use its colors as swap targets</p>
+                    <div class="palette-source-upload" id="paletteSourceUpload">
+                        <div id="paletteSourceContent">
+                            <div style="font-size: 24px;">🎨</div>
+                            <p style="margin: 5px 0 0; font-size: 12px; color: #888;">Click to upload palette image</p>
+                        </div>
+                        <input type="file" id="paletteSourceInput" accept=".gif,.png,.jpg,.jpeg,.webp" style="display: none;">
+                    </div>
+                    <div id="sourcePaletteContainer" class="hidden">
+                        <p style="font-size: 11px; color: #888; margin: 5px 0;">Click a color below to use as the new color:</p>
+                        <div class="source-palette-grid" id="sourcePaletteGrid"></div>
+                        <button id="clearPaletteSourceBtn" style="width: 100%; margin-top: 10px; padding: 6px 12px; font-size: 11px; background: #555;">✕ Clear Palette Source</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -474,7 +553,7 @@
                         <li><strong>Upload</strong> your pixel art GIF, PNG, or multiple images</li>
                         <li><strong>View</strong> the automatically extracted color palette</li>
                         <li><strong>Click</strong> a color in the palette or pick directly from the image</li>
-                        <li><strong>Choose</strong> a new color using the color picker</li>
+                        <li><strong>Choose</strong> a new color using the color picker, or upload a <strong>palette source image</strong> to pick colors from</li>
                         <li><strong>Apply</strong> the swap - all pixels of that color change instantly</li>
                         <li><strong>Export</strong> as GIF or PNG sequence when done</li>
                     </ol>
@@ -486,6 +565,7 @@
                         <li><strong>GIF Support</strong> - Load animated GIFs and edit all frames at once</li>
                         <li><strong>Image Sequences</strong> - Upload multiple PNGs as animation frames</li>
                         <li><strong>Color Picker</strong> - Click directly on the image to select colors</li>
+                        <li><strong>Palette Import</strong> - Upload a second image to use its colors as swap targets</li>
                         <li><strong>Live Preview</strong> - See changes in real-time with animation playback</li>
                         <li><strong>Zoom Control</strong> - Pixel-perfect viewing at any scale</li>
                         <li><strong>Save Presets</strong> - Export color mappings to reuse on other sprites</li>
@@ -614,6 +694,50 @@
         const swapHistoryEl = document.getElementById('swapHistory');
         const speedSlider = document.getElementById('speedSlider');
         const speedValue = document.getElementById('speedValue');
+        const paletteSourceUpload = document.getElementById('paletteSourceUpload');
+        const paletteSourceInput = document.getElementById('paletteSourceInput');
+        const paletteSourceContent = document.getElementById('paletteSourceContent');
+        const sourcePaletteContainer = document.getElementById('sourcePaletteContainer');
+        const sourcePaletteGrid = document.getElementById('sourcePaletteGrid');
+        const clearPaletteSourceBtn = document.getElementById('clearPaletteSourceBtn');
+        const newColorHex = document.getElementById('newColorHex');
+        
+        // Sync color picker and hex input
+        newColorPicker.addEventListener('input', (e) => {
+            newColorHex.value = e.target.value.toUpperCase();
+        });
+        
+        newColorHex.addEventListener('input', (e) => {
+            let val = e.target.value;
+            // Add # if missing
+            if (val && !val.startsWith('#')) {
+                val = '#' + val;
+                e.target.value = val;
+            }
+            // Validate and sync to color picker
+            if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                newColorPicker.value = val.toLowerCase();
+                e.target.style.borderColor = '#555';
+            } else if (val.length > 1) {
+                e.target.style.borderColor = '#e94560';
+            }
+        });
+        
+        newColorHex.addEventListener('blur', (e) => {
+            // On blur, correct incomplete values
+            let val = e.target.value;
+            if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                e.target.value = val.toUpperCase();
+                e.target.style.borderColor = '#555';
+            } else {
+                // Reset to current color picker value
+                e.target.value = newColorPicker.value.toUpperCase();
+                e.target.style.borderColor = '#555';
+            }
+        });
+        
+        // Palette source state
+        let sourcePaletteColors = new Map();
 
         // Event Listeners
         uploadArea.addEventListener('click', () => fileInput.click());
@@ -657,6 +781,28 @@
             speedValue.textContent = fps;
             // Update all frame delays for image sequences
             frameDelays = frameDelays.map(() => customFrameDelay);
+        });
+        
+        // Palette source event listeners
+        paletteSourceUpload.addEventListener('click', () => paletteSourceInput.click());
+        paletteSourceInput.addEventListener('change', handlePaletteSourceUpload);
+        clearPaletteSourceBtn.addEventListener('click', clearPaletteSource);
+        
+        // Drag and drop for palette source
+        paletteSourceUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            paletteSourceUpload.style.borderColor = '#e94560';
+        });
+        paletteSourceUpload.addEventListener('dragleave', () => {
+            paletteSourceUpload.style.borderColor = sourcePaletteColors.size > 0 ? '#4caf50' : '#555';
+        });
+        paletteSourceUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            paletteSourceUpload.style.borderColor = sourcePaletteColors.size > 0 ? '#4caf50' : '#555';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                loadPaletteSourceImage(file);
+            }
         });
 
         // Color picker from canvas
@@ -934,8 +1080,16 @@
             paletteGrid.innerHTML = '';
             colorCount.textContent = colorPalette.size;
             
-            // Sort by usage count
-            const sortedColors = [...colorPalette.entries()].sort((a, b) => b[1].count - a[1].count);
+            // Sort by color similarity using HSL
+            const sortedColors = [...colorPalette.entries()].sort((a, b) => {
+                const hslA = rgbToHsl(a[1].r, a[1].g, a[1].b);
+                const hslB = rgbToHsl(b[1].r, b[1].g, b[1].b);
+                
+                // First sort by hue (color), then by saturation, then by lightness
+                if (Math.abs(hslA.h - hslB.h) > 0.02) return hslA.h - hslB.h;
+                if (Math.abs(hslA.s - hslB.s) > 0.1) return hslB.s - hslA.s;
+                return hslB.l - hslA.l;
+            });
             
             for (const [colorKey, colorData] of sortedColors) {
                 const div = document.createElement('div');
@@ -963,7 +1117,9 @@
             
             const [r, g, b] = colorKey.split(',').map(Number);
             originalColorEl.style.background = `rgb(${r}, ${g}, ${b})`;
-            newColorPicker.value = rgbToHex(r, g, b);
+            const hexColor = rgbToHex(r, g, b);
+            newColorPicker.value = hexColor;
+            newColorHex.value = hexColor.toUpperCase();
             
             applySwapBtn.disabled = false;
         }
@@ -1129,6 +1285,108 @@
             // Reset file input
             e.target.value = '';
         }
+        
+        // Palette source functions
+        async function handlePaletteSourceUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            await loadPaletteSourceImage(file);
+            e.target.value = '';
+        }
+        
+        async function loadPaletteSourceImage(file) {
+            try {
+                const img = await loadImageFromFile(file);
+                
+                // Create a canvas to read pixel data
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = img.width;
+                tempCanvas.height = img.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(img, 0, 0);
+                
+                const imageData = tempCtx.getImageData(0, 0, img.width, img.height);
+                const data = imageData.data;
+                
+                // Extract colors from the palette source image
+                sourcePaletteColors.clear();
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    const a = data[i + 3];
+                    
+                    if (a > 0) {
+                        const colorKey = `${r},${g},${b}`;
+                        if (!sourcePaletteColors.has(colorKey)) {
+                            sourcePaletteColors.set(colorKey, { r, g, b, count: 1 });
+                        } else {
+                            sourcePaletteColors.get(colorKey).count++;
+                        }
+                    }
+                }
+                
+                // Update the UI
+                updatePaletteSourceUI(img, file.name);
+                renderSourcePalette();
+                
+            } catch (error) {
+                console.error('Error loading palette source:', error);
+                alert('Error loading image: ' + error.message);
+            }
+        }
+        
+        function updatePaletteSourceUI(img, fileName) {
+            // Show preview image
+            paletteSourceContent.innerHTML = `
+                <img src="${img.src}" class="palette-source-preview" alt="Palette source">
+                <p style="margin: 0; font-size: 11px; color: #4caf50;">✓ ${fileName}</p>
+                <p style="margin: 2px 0 0; font-size: 10px; color: #888;">${sourcePaletteColors.size} colors extracted</p>
+            `;
+            paletteSourceUpload.classList.add('has-image');
+            sourcePaletteContainer.classList.remove('hidden');
+        }
+        
+        function renderSourcePalette() {
+            sourcePaletteGrid.innerHTML = '';
+            
+            // Sort by usage count
+            const sortedColors = [...sourcePaletteColors.entries()].sort((a, b) => b[1].count - a[1].count);
+            
+            for (const [colorKey, colorData] of sortedColors) {
+                const div = document.createElement('div');
+                div.className = 'source-color-item';
+                div.style.background = `rgb(${colorData.r}, ${colorData.g}, ${colorData.b})`;
+                div.dataset.color = colorKey;
+                div.title = rgbToHex(colorData.r, colorData.g, colorData.b);
+                
+                div.addEventListener('click', () => selectSourceColor(colorKey, div));
+                sourcePaletteGrid.appendChild(div);
+            }
+        }
+        
+        function selectSourceColor(colorKey, element) {
+            // Remove previous selection from source palette
+            document.querySelectorAll('.source-color-item.selected').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            
+            // Update the color picker with this color
+            const [r, g, b] = colorKey.split(',').map(Number);
+            const hexColor = rgbToHex(r, g, b);
+            newColorPicker.value = hexColor;
+            newColorHex.value = hexColor.toUpperCase();
+        }
+        
+        function clearPaletteSource() {
+            sourcePaletteColors.clear();
+            sourcePaletteGrid.innerHTML = '';
+            sourcePaletteContainer.classList.add('hidden');
+            paletteSourceUpload.classList.remove('has-image');
+            paletteSourceContent.innerHTML = `
+                <div style="font-size: 24px;">🎨</div>
+                <p style="margin: 5px 0 0; font-size: 12px; color: #888;">Click to upload palette image</p>
+            `;
+        }
 
         function showFrame(index) {
             if (currentFrames.length === 0) return;
@@ -1200,7 +1458,9 @@
                     quality: 1,
                     width: gifWidth,
                     height: gifHeight,
-                    workerScript: workerUrl
+                    workerScript: workerUrl,
+                    transparent: 0x00000000,
+                    background: '#000000'
                 });
                 
                 for (let i = 0; i < currentFrames.length; i++) {
@@ -1210,9 +1470,11 @@
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = gifWidth;
                     tempCanvas.height = gifHeight;
-                    tempCanvas.getContext('2d').putImageData(imageData, 0, 0);
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.clearRect(0, 0, gifWidth, gifHeight);
+                    tempCtx.putImageData(imageData, 0, 0);
                     
-                    gif.addFrame(tempCanvas, { delay: frameDelays[i], copy: true });
+                    gif.addFrame(tempCanvas, { delay: frameDelays[i], copy: true, transparent: 0x00000000 });
                 }
                 
                 gif.on('finished', (blob) => {
@@ -1302,6 +1564,31 @@
 
         function rgbToHex(r, g, b) {
             return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+        }
+        
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            
+            if (max === min) {
+                h = s = 0; // achromatic (gray)
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                    case g: h = ((b - r) / d + 2) / 6; break;
+                    case b: h = ((r - g) / d + 4) / 6; break;
+                }
+            }
+            
+            return { h, s, l };
         }
     </script>
 </body>
