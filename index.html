@@ -446,6 +446,71 @@
             border-color: #e94560;
             box-shadow: 0 0 8px rgba(233, 69, 96, 0.7);
         }
+        
+        /* Selection Tools Styles */
+        .selection-tools {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .selection-tools h3 {
+            margin-top: 0;
+            font-size: 14px;
+            color: #aaa;
+        }
+        .tool-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .tool-btn {
+            flex: 1;
+            min-width: 70px;
+            padding: 8px 12px;
+            font-size: 12px;
+            background: #333;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .tool-btn:hover {
+            background: #444;
+        }
+        .tool-btn.active {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.2);
+        }
+        .selection-info {
+            font-size: 11px;
+            color: #888;
+            margin-top: 8px;
+            min-height: 32px;
+        }
+        .selection-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .selection-actions button {
+            flex: 1;
+            padding: 6px 10px;
+            font-size: 11px;
+        }
+        .preview-container {
+            position: relative;
+        }
+        #selectionCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        .canvas-wrapper {
+            position: relative;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -462,7 +527,10 @@
         <div class="main-content hidden" id="mainContent">
             <div class="preview-section">
                 <div class="preview-container">
-                    <canvas id="previewCanvas"></canvas>
+                    <div class="canvas-wrapper">
+                        <canvas id="previewCanvas"></canvas>
+                        <canvas id="selectionCanvas"></canvas>
+                    </div>
                 </div>
                 <p style="text-align: center; font-size: 12px; color: #888; margin: 5px 0;">💡 Click on the image to pick a color</p>
                 <div class="frame-info" id="frameInfo">Frame 1 / 1</div>
@@ -480,6 +548,21 @@
                     <button id="nextFrameBtn">⏭️ Next</button>
                     <button id="exportBtn">💾 Export GIF</button>
                     <button id="exportPngBtn">🖼️ Export PNGs</button>
+                </div>
+                
+                <div class="selection-tools">
+                    <h3>✂️ Selection Tools</h3>
+                    <p style="font-size: 11px; color: #666; margin: 5px 0 10px;">Select area to limit where colors are swapped</p>
+                    <div class="tool-buttons">
+                        <button class="tool-btn active" id="toolNone" title="No selection - swap colors everywhere">Color Picker 🖱️</button>
+                        <button class="tool-btn" id="toolRect" title="Rectangle selection">⬜ Rectangle</button>
+                        <button class="tool-btn" id="toolPoly" title="Polygon selection - click to add points, double-click to close">🔷 Polygon</button>
+                    </div>
+                    <div class="selection-info" id="selectionInfo">No selection - color swaps will apply to entire image</div>
+                    <div class="selection-actions">
+                        <button id="invertSelectionBtn" style="background: #555;" disabled>🔄 Invert</button>
+                        <button id="clearSelectionBtn" style="background: #555;" disabled>✕ Clear Selection</button>
+                    </div>
                 </div>
             </div>
 
@@ -564,6 +647,7 @@
                     <ul>
                         <li><strong>GIF Support</strong> - Load animated GIFs and edit all frames at once</li>
                         <li><strong>Image Sequences</strong> - Upload multiple PNGs as animation frames</li>
+                        <li><strong>Selection Tools</strong> - Use rectangle or polygon selection to swap colors in specific areas only</li>
                         <li><strong>Color Picker</strong> - Click directly on the image to select colors</li>
                         <li><strong>Palette Import</strong> - Upload a second image to use its colors as swap targets</li>
                         <li><strong>Live Preview</strong> - See changes in real-time with animation playback</li>
@@ -624,6 +708,11 @@
                     <summary>Why are some colors not being detected?</summary>
                     <p>The tool only detects non-transparent pixels. If your image uses anti-aliasing or gradients, you may see many similar colors. Pixel art with a clean, limited palette works best.</p>
                 </details>
+                
+                <details>
+                    <summary>How do the selection tools work?</summary>
+                    <p>Use the Rectangle or Polygon selection tools to define an area where color swaps should be applied. With a selection active, only pixels within that area will be changed when you swap colors. The Rectangle tool lets you click and drag, while the Polygon tool lets you click to add points and double-click (or press Enter) to close the shape. You can also invert the selection to swap colors everywhere except the selected area.</p>
+                </details>
             </div>
 
             <p class="footer-note">
@@ -669,6 +758,15 @@
         let zoom = 4;
         let colorSwapHistory = []; // Track all color swaps made
         let customFrameDelay = 100; // Default delay for image sequences (10 FPS)
+        
+        // Selection tool state
+        let currentTool = 'none'; // 'none', 'rect', 'poly'
+        let selectionMask = null; // Uint8Array matching image pixels, 1 = selected, 0 = not
+        let isDrawingSelection = false;
+        let selectionStart = { x: 0, y: 0 };
+        let selectionEnd = { x: 0, y: 0 };
+        let polygonPoints = [];
+        let tempPolygonPoint = null;
 
         // DOM Elements
         const uploadArea = document.getElementById('uploadArea');
@@ -704,6 +802,16 @@
         const sourcePaletteGrid = document.getElementById('sourcePaletteGrid');
         const clearPaletteSourceBtn = document.getElementById('clearPaletteSourceBtn');
         const newColorHex = document.getElementById('newColorHex');
+        
+        // Selection tool elements
+        const selectionCanvas = document.getElementById('selectionCanvas');
+        const selectionCtx = selectionCanvas.getContext('2d');
+        const toolNoneBtn = document.getElementById('toolNone');
+        const toolRectBtn = document.getElementById('toolRect');
+        const toolPolyBtn = document.getElementById('toolPoly');
+        const selectionInfo = document.getElementById('selectionInfo');
+        const invertSelectionBtn = document.getElementById('invertSelectionBtn');
+        const clearSelectionBtn = document.getElementById('clearSelectionBtn');
         
         // Sync color picker and hex input
         newColorPicker.addEventListener('input', (e) => {
@@ -741,6 +849,247 @@
         
         // Palette source state
         let sourcePaletteColors = new Map();
+        
+        // Selection tool event listeners
+        toolNoneBtn.addEventListener('click', () => selectTool('none'));
+        toolRectBtn.addEventListener('click', () => selectTool('rect'));
+        toolPolyBtn.addEventListener('click', () => selectTool('poly'));
+        invertSelectionBtn.addEventListener('click', invertSelection);
+        clearSelectionBtn.addEventListener('click', clearSelection);
+        
+        function selectTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            if (tool === 'none') {
+                toolNoneBtn.classList.add('active');
+                previewCanvas.style.cursor = 'crosshair';
+            } else if (tool === 'rect') {
+                toolRectBtn.classList.add('active');
+                previewCanvas.style.cursor = 'crosshair';
+            } else if (tool === 'poly') {
+                toolPolyBtn.classList.add('active');
+                previewCanvas.style.cursor = 'crosshair';
+            }
+            // Reset polygon points when switching tools
+            if (tool !== 'poly') {
+                polygonPoints = [];
+                tempPolygonPoint = null;
+            }
+            renderSelectionOverlay();
+            updateSelectionInfo();
+        }
+        
+        function updateSelectionInfo() {
+            const hasSelection = selectionMask && selectionMask.some(v => v === 1);
+            invertSelectionBtn.disabled = !hasSelection;
+            clearSelectionBtn.disabled = !hasSelection;
+            
+            if (!hasSelection) {
+                if (currentTool === 'none') {
+                    selectionInfo.textContent = 'No selection - color swaps will apply to entire image';
+                } else if (currentTool === 'rect') {
+                    selectionInfo.textContent = 'Click and drag to create a rectangle selection';
+                } else if (currentTool === 'poly') {
+                    selectionInfo.textContent = 'Click to add points, double-click or press Enter to close polygon';
+                }
+            } else {
+                const selectedCount = selectionMask.filter(v => v === 1).length;
+                const totalPixels = gifWidth * gifHeight;
+                const percent = ((selectedCount / totalPixels) * 100).toFixed(1);
+                selectionInfo.textContent = `${selectedCount} pixels selected (${percent}% of image)`;
+            }
+        }
+        
+        function clearSelection() {
+            selectionMask = null;
+            polygonPoints = [];
+            tempPolygonPoint = null;
+            renderSelectionOverlay();
+            updateSelectionInfo();
+        }
+        
+        function invertSelection() {
+            if (!selectionMask) return;
+            for (let i = 0; i < selectionMask.length; i++) {
+                selectionMask[i] = selectionMask[i] === 1 ? 0 : 1;
+            }
+            renderSelectionOverlay();
+            updateSelectionInfo();
+        }
+        
+        function createSelectionMask() {
+            if (!selectionMask || selectionMask.length !== gifWidth * gifHeight) {
+                selectionMask = new Uint8Array(gifWidth * gifHeight);
+            }
+            selectionMask.fill(0);
+        }
+        
+        function applyRectangleSelection(x1, y1, x2, y2) {
+            createSelectionMask();
+            const minX = Math.max(0, Math.min(x1, x2));
+            const maxX = Math.min(gifWidth - 1, Math.max(x1, x2));
+            const minY = Math.max(0, Math.min(y1, y2));
+            const maxY = Math.min(gifHeight - 1, Math.max(y1, y2));
+            
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    selectionMask[y * gifWidth + x] = 1;
+                }
+            }
+            updateSelectionInfo();
+        }
+        
+        function applyPolygonSelection(points) {
+            if (points.length < 3) return;
+            createSelectionMask();
+            
+            // Point-in-polygon test using ray casting
+            for (let y = 0; y < gifHeight; y++) {
+                for (let x = 0; x < gifWidth; x++) {
+                    if (isPointInPolygon(x + 0.5, y + 0.5, points)) {
+                        selectionMask[y * gifWidth + x] = 1;
+                    }
+                }
+            }
+            updateSelectionInfo();
+        }
+        
+        function isPointInPolygon(x, y, polygon) {
+            let inside = false;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                const xi = polygon[i].x, yi = polygon[i].y;
+                const xj = polygon[j].x, yj = polygon[j].y;
+                
+                if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+        
+        function renderSelectionOverlay() {
+            selectionCanvas.width = previewCanvas.width;
+            selectionCanvas.height = previewCanvas.height;
+            selectionCtx.clearRect(0, 0, selectionCanvas.width, selectionCanvas.height);
+            
+            // Draw the selection mask with marching ants effect
+            if (selectionMask && selectionMask.some(v => v === 1)) {
+                // Create a semi-transparent overlay for non-selected areas
+                selectionCtx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                for (let y = 0; y < gifHeight; y++) {
+                    for (let x = 0; x < gifWidth; x++) {
+                        if (selectionMask[y * gifWidth + x] === 0) {
+                            selectionCtx.fillRect(x * zoom, y * zoom, zoom, zoom);
+                        }
+                    }
+                }
+                
+                // Draw selection border (marching ants style)
+                selectionCtx.strokeStyle = '#fff';
+                selectionCtx.lineWidth = 1;
+                selectionCtx.setLineDash([4, 4]);
+                selectionCtx.lineDashOffset = -(Date.now() / 50) % 8;
+                
+                // Find and draw selection edges
+                for (let y = 0; y < gifHeight; y++) {
+                    for (let x = 0; x < gifWidth; x++) {
+                        if (selectionMask[y * gifWidth + x] === 1) {
+                            const px = x * zoom;
+                            const py = y * zoom;
+                            // Check if edge pixel
+                            if (x === 0 || selectionMask[y * gifWidth + (x - 1)] === 0) {
+                                selectionCtx.beginPath();
+                                selectionCtx.moveTo(px, py);
+                                selectionCtx.lineTo(px, py + zoom);
+                                selectionCtx.stroke();
+                            }
+                            if (x === gifWidth - 1 || selectionMask[y * gifWidth + (x + 1)] === 0) {
+                                selectionCtx.beginPath();
+                                selectionCtx.moveTo(px + zoom, py);
+                                selectionCtx.lineTo(px + zoom, py + zoom);
+                                selectionCtx.stroke();
+                            }
+                            if (y === 0 || selectionMask[(y - 1) * gifWidth + x] === 0) {
+                                selectionCtx.beginPath();
+                                selectionCtx.moveTo(px, py);
+                                selectionCtx.lineTo(px + zoom, py);
+                                selectionCtx.stroke();
+                            }
+                            if (y === gifHeight - 1 || selectionMask[(y + 1) * gifWidth + x] === 0) {
+                                selectionCtx.beginPath();
+                                selectionCtx.moveTo(px, py + zoom);
+                                selectionCtx.lineTo(px + zoom, py + zoom);
+                                selectionCtx.stroke();
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Draw rectangle preview while dragging
+            if (currentTool === 'rect' && isDrawingSelection) {
+                const minX = Math.min(selectionStart.x, selectionEnd.x) * zoom;
+                const minY = Math.min(selectionStart.y, selectionEnd.y) * zoom;
+                const width = (Math.abs(selectionEnd.x - selectionStart.x) + 1) * zoom;
+                const height = (Math.abs(selectionEnd.y - selectionStart.y) + 1) * zoom;
+                
+                selectionCtx.strokeStyle = '#e94560';
+                selectionCtx.lineWidth = 2;
+                selectionCtx.setLineDash([5, 5]);
+                selectionCtx.strokeRect(minX, minY, width, height);
+                
+                selectionCtx.fillStyle = 'rgba(233, 69, 96, 0.2)';
+                selectionCtx.fillRect(minX, minY, width, height);
+            }
+            
+            // Draw polygon preview
+            if (currentTool === 'poly' && polygonPoints.length > 0) {
+                selectionCtx.strokeStyle = '#e94560';
+                selectionCtx.lineWidth = 2;
+                selectionCtx.setLineDash([]);
+                selectionCtx.fillStyle = 'rgba(233, 69, 96, 0.2)';
+                
+                selectionCtx.beginPath();
+                selectionCtx.moveTo((polygonPoints[0].x + 0.5) * zoom, (polygonPoints[0].y + 0.5) * zoom);
+                
+                for (let i = 1; i < polygonPoints.length; i++) {
+                    selectionCtx.lineTo((polygonPoints[i].x + 0.5) * zoom, (polygonPoints[i].y + 0.5) * zoom);
+                }
+                
+                if (tempPolygonPoint) {
+                    selectionCtx.lineTo((tempPolygonPoint.x + 0.5) * zoom, (tempPolygonPoint.y + 0.5) * zoom);
+                }
+                
+                if (polygonPoints.length >= 3) {
+                    selectionCtx.closePath();
+                    selectionCtx.fill();
+                }
+                selectionCtx.stroke();
+                
+                // Draw points
+                for (const pt of polygonPoints) {
+                    selectionCtx.fillStyle = '#e94560';
+                    selectionCtx.beginPath();
+                    selectionCtx.arc((pt.x + 0.5) * zoom, (pt.y + 0.5) * zoom, 4, 0, Math.PI * 2);
+                    selectionCtx.fill();
+                    selectionCtx.strokeStyle = '#fff';
+                    selectionCtx.lineWidth = 1;
+                    selectionCtx.stroke();
+                }
+            }
+        }
+        
+        // Animate marching ants
+        let marchingAntsInterval = null;
+        function startMarchingAnts() {
+            if (marchingAntsInterval) return;
+            marchingAntsInterval = setInterval(() => {
+                if (selectionMask && selectionMask.some(v => v === 1)) {
+                    renderSelectionOverlay();
+                }
+            }, 100);
+        }
+        startMarchingAnts();
 
         // Event Listeners
         uploadArea.addEventListener('click', () => fileInput.click());
@@ -812,6 +1161,16 @@
         previewCanvas.addEventListener('click', (e) => {
             if (currentFrames.length === 0) return;
             
+            // If using polygon tool, handle polygon click
+            if (currentTool === 'poly') {
+                return; // Handled by mousedown
+            }
+            
+            // If using rect tool, don't pick colors on click
+            if (currentTool === 'rect') {
+                return;
+            }
+            
             const rect = previewCanvas.getBoundingClientRect();
             const scaleX = previewCanvas.width / rect.width;
             const scaleY = previewCanvas.height / rect.height;
@@ -843,6 +1202,106 @@
                 selectColor(colorKey, colorItem);
                 // Scroll the color into view in the palette
                 colorItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+        
+        // Mouse events for selection tools
+        previewCanvas.addEventListener('mousedown', (e) => {
+            if (currentFrames.length === 0) return;
+            
+            const rect = previewCanvas.getBoundingClientRect();
+            const scaleX = previewCanvas.width / rect.width;
+            const scaleY = previewCanvas.height / rect.height;
+            const canvasX = Math.floor((e.clientX - rect.left) * scaleX);
+            const canvasY = Math.floor((e.clientY - rect.top) * scaleY);
+            const imgX = Math.floor(canvasX / zoom);
+            const imgY = Math.floor(canvasY / zoom);
+            
+            if (imgX < 0 || imgX >= gifWidth || imgY < 0 || imgY >= gifHeight) return;
+            
+            if (currentTool === 'rect') {
+                isDrawingSelection = true;
+                selectionStart = { x: imgX, y: imgY };
+                selectionEnd = { x: imgX, y: imgY };
+                renderSelectionOverlay();
+            } else if (currentTool === 'poly') {
+                // Add point to polygon
+                polygonPoints.push({ x: imgX, y: imgY });
+                tempPolygonPoint = null;
+                renderSelectionOverlay();
+                updateSelectionInfo();
+            }
+        });
+        
+        previewCanvas.addEventListener('mousemove', (e) => {
+            if (currentFrames.length === 0) return;
+            
+            const rect = previewCanvas.getBoundingClientRect();
+            const scaleX = previewCanvas.width / rect.width;
+            const scaleY = previewCanvas.height / rect.height;
+            const canvasX = Math.floor((e.clientX - rect.left) * scaleX);
+            const canvasY = Math.floor((e.clientY - rect.top) * scaleY);
+            const imgX = Math.max(0, Math.min(gifWidth - 1, Math.floor(canvasX / zoom)));
+            const imgY = Math.max(0, Math.min(gifHeight - 1, Math.floor(canvasY / zoom)));
+            
+            if (currentTool === 'rect' && isDrawingSelection) {
+                selectionEnd = { x: imgX, y: imgY };
+                renderSelectionOverlay();
+            } else if (currentTool === 'poly' && polygonPoints.length > 0) {
+                tempPolygonPoint = { x: imgX, y: imgY };
+                renderSelectionOverlay();
+            }
+        });
+        
+        previewCanvas.addEventListener('mouseup', (e) => {
+            if (currentTool === 'rect' && isDrawingSelection) {
+                isDrawingSelection = false;
+                applyRectangleSelection(
+                    selectionStart.x, selectionStart.y,
+                    selectionEnd.x, selectionEnd.y
+                );
+                renderSelectionOverlay();
+            }
+        });
+        
+        previewCanvas.addEventListener('mouseleave', () => {
+            if (currentTool === 'rect' && isDrawingSelection) {
+                isDrawingSelection = false;
+                applyRectangleSelection(
+                    selectionStart.x, selectionStart.y,
+                    selectionEnd.x, selectionEnd.y
+                );
+                renderSelectionOverlay();
+            }
+        });
+        
+        previewCanvas.addEventListener('dblclick', (e) => {
+            if (currentTool === 'poly' && polygonPoints.length >= 3) {
+                // Close polygon on double-click
+                applyPolygonSelection(polygonPoints);
+                polygonPoints = [];
+                tempPolygonPoint = null;
+                renderSelectionOverlay();
+            }
+        });
+        
+        // Handle Enter key to close polygon
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && currentTool === 'poly' && polygonPoints.length >= 3) {
+                applyPolygonSelection(polygonPoints);
+                polygonPoints = [];
+                tempPolygonPoint = null;
+                renderSelectionOverlay();
+            } else if (e.key === 'Escape') {
+                if (currentTool === 'poly' && polygonPoints.length > 0) {
+                    polygonPoints = [];
+                    tempPolygonPoint = null;
+                    renderSelectionOverlay();
+                    updateSelectionInfo();
+                } else if (isDrawingSelection) {
+                    isDrawingSelection = false;
+                    renderSelectionOverlay();
+                }
             }
         });
 
@@ -890,6 +1349,9 @@
                 currentFrames = [];
                 frameDelays = [];
                 colorSwapHistory = [];
+                selectionMask = null;
+                polygonPoints = [];
+                tempPolygonPoint = null;
                 
                 let maxWidth = 0;
                 let maxHeight = 0;
@@ -939,6 +1401,7 @@
                 loading.classList.add('hidden');
                 mainContent.classList.remove('hidden');
                 updateSwapHistoryDisplay();
+                updateSelectionInfo();
                 
             } catch (error) {
                 console.error('Error loading images:', error);
@@ -967,6 +1430,9 @@
             loading.classList.remove('hidden');
             mainContent.classList.add('hidden');
             colorSwapHistory = [];
+            selectionMask = null;
+            polygonPoints = [];
+            tempPolygonPoint = null;
             
             try {
                 const arrayBuffer = await file.arrayBuffer();
@@ -1041,6 +1507,7 @@
                 loading.classList.add('hidden');
                 mainContent.classList.remove('hidden');
                 updateSwapHistoryDisplay();
+                updateSelectionInfo();
                 
             } catch (error) {
                 console.error('Error loading GIF:', error);
@@ -1053,6 +1520,9 @@
             previewCanvas.width = gifWidth * zoom;
             previewCanvas.height = gifHeight * zoom;
             ctx.imageSmoothingEnabled = false;
+            selectionCanvas.width = previewCanvas.width;
+            selectionCanvas.height = previewCanvas.height;
+            renderSelectionOverlay();
         }
 
         function extractPalette() {
@@ -1139,16 +1609,27 @@
             // Skip if colors are the same
             if (oldR === newR && oldG === newG && oldB === newB) return;
             
+            // Check if we have a selection
+            const hasSelection = selectionMask && selectionMask.some(v => v === 1);
+            
             // Record the swap in history (from original color)
             const oldHex = rgbToHex(oldR, oldG, oldB);
             colorSwapHistory.push({
                 from: { r: oldR, g: oldG, b: oldB, hex: oldHex },
-                to: { r: newR, g: newG, b: newB, hex: newHex }
+                to: { r: newR, g: newG, b: newB, hex: newHex },
+                hasSelection: hasSelection
             });
             
             // Apply swap to all frames
             for (const frameData of currentFrames) {
                 for (let i = 0; i < frameData.length; i += 4) {
+                    const pixelIndex = i / 4;
+                    
+                    // If we have a selection, only swap pixels within the selection
+                    if (hasSelection && selectionMask[pixelIndex] === 0) {
+                        continue;
+                    }
+                    
                     if (frameData[i] === oldR && frameData[i + 1] === oldG && frameData[i + 2] === oldB) {
                         frameData[i] = newR;
                         frameData[i + 1] = newG;
@@ -1173,9 +1654,14 @@
                 currentFrames[i] = new Uint8ClampedArray(originalFrames[i]);
             }
             colorSwapHistory = [];
+            selectionMask = null;
+            polygonPoints = [];
+            tempPolygonPoint = null;
             extractPalette();
             renderCurrentFrame();
+            renderSelectionOverlay();
             updateSwapHistoryDisplay();
+            updateSelectionInfo();
             selectedColor = null;
             applySwapBtn.disabled = true;
             originalColorEl.style.background = '#888';
