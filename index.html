@@ -546,8 +546,8 @@
                     <button id="playPauseBtn">⏸️ Pause</button>
                     <button id="prevFrameBtn">⏮️ Prev</button>
                     <button id="nextFrameBtn">⏭️ Next</button>
-                    <button id="exportBtn">💾 Export GIF</button>
-                    <button id="exportPngBtn">🖼️ Export PNGs</button>
+                    <button id="exportBtn">�️ Export Frame</button>
+                    <button id="exportPngBtn">📁 Export All PNGs</button>
                 </div>
                 
                 <div class="selection-tools">
@@ -724,25 +724,9 @@
         </footer>
     </div>
 
-    <script src="https://unpkg.com/gif.js@0.2.0/dist/gif.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script type="module">
         import { parseGIF, decompressFrames } from 'https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm';
-        
-        // Fetch and create blob URL for gif.js worker to avoid CORS issues
-        let gifWorkerBlobUrl = null;
-        async function getGifWorkerUrl() {
-            if (gifWorkerBlobUrl) return gifWorkerBlobUrl;
-            try {
-                const response = await fetch('https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js');
-                const blob = await response.blob();
-                gifWorkerBlobUrl = URL.createObjectURL(blob);
-                return gifWorkerBlobUrl;
-            } catch (e) {
-                console.error('Failed to load gif worker:', e);
-                throw e;
-            }
-        }
         
         // State
         let originalFrames = [];
@@ -1114,7 +1098,7 @@
         playPauseBtn.addEventListener('click', togglePlayPause);
         prevFrameBtn.addEventListener('click', () => { stopAnimation(); showFrame(currentFrameIndex - 1); });
         nextFrameBtn.addEventListener('click', () => { stopAnimation(); showFrame(currentFrameIndex + 1); });
-        exportBtn.addEventListener('click', exportGif);
+        exportBtn.addEventListener('click', exportCurrentFrame);
         exportPngBtn.addEventListener('click', exportPngSequence);
         applySwapBtn.addEventListener('click', applyColorSwap);
         resetBtn.addEventListener('click', resetChanges);
@@ -1936,56 +1920,28 @@
             }
         }
 
-        async function exportGif() {
-            exportBtn.disabled = true;
-            exportBtn.textContent = '⏳ Exporting...';
-            
-            try {
-                const workerUrl = await getGifWorkerUrl();
-                const gif = new GIF({
-                    workers: 2,
-                    quality: 1,
-                    width: gifWidth,
-                    height: gifHeight,
-                    workerScript: workerUrl,
-                    transparent: 0x00000000,
-                    background: '#000000'
-                });
-                
-                for (let i = 0; i < currentFrames.length; i++) {
-                    const frameData = currentFrames[i];
-                    const imageData = new ImageData(new Uint8ClampedArray(frameData), gifWidth, gifHeight);
-                    
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = gifWidth;
-                    tempCanvas.height = gifHeight;
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCtx.clearRect(0, 0, gifWidth, gifHeight);
-                    tempCtx.putImageData(imageData, 0, 0);
-                    
-                    gif.addFrame(tempCanvas, { delay: frameDelays[i], copy: true, transparent: 0x00000000 });
-                }
-                
-                gif.on('finished', (blob) => {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'palette-swapped.gif';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    
-                    exportBtn.disabled = false;
-                    exportBtn.textContent = '💾 Export GIF';
-                });
-                
-                gif.render();
-                
-            } catch (error) {
-                console.error('Export error:', error);
-                alert('Error exporting GIF: ' + error.message);
-                exportBtn.disabled = false;
-                exportBtn.textContent = '💾 Export GIF';
+        function exportCurrentFrame() {
+            if (currentFrames.length === 0) {
+                alert('No image loaded!');
+                return;
             }
+            
+            const frameData = currentFrames[currentFrameIndex];
+            const imageData = new ImageData(new Uint8ClampedArray(frameData), gifWidth, gifHeight);
+            
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = gifWidth;
+            tempCanvas.height = gifHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.imageSmoothingEnabled = false;
+            tempCtx.putImageData(imageData, 0, 0);
+            
+            const url = tempCanvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            const frameNum = currentFrames.length > 1 ? `-frame${currentFrameIndex + 1}` : '';
+            a.download = `palette-swapped${frameNum}.png`;
+            a.click();
         }
 
         async function exportPngSequence() {
