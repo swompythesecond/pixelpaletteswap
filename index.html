@@ -1736,6 +1736,8 @@
             applySwapBtn.disabled = true;
             originalColorEl.style.background = '#888';
         }
+        // Expose to global scope for inline onclick handlers
+        window.undoSingleSwap = undoSingleSwap;
 
         function exportPreset() {
             if (colorSwapHistory.length === 0) {
