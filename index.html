@@ -574,7 +574,11 @@
                     <h3>Color Swap</h3>
                     <p style="font-size: 12px; color: #888;">Select a color from the palette, then pick a new color below</p>
                     <div class="swap-preview">
-                        <div class="swap-color" id="originalColor" style="background: #888;"></div>
+                        <div class="color-picker-wrapper">
+                            <div class="swap-color" id="originalColor" style="background: #888;"></div>
+                            <input type="text" id="originalColorHex" value="#888888" readonly style="width: 70px; padding: 6px 8px; border: 1px solid #555; border-radius: 4px; background: #0d0d1a; color: #aaa; font-family: monospace; text-transform: uppercase; cursor: default;">
+                            <label>Original</label>
+                        </div>
                         <span class="swap-arrow">➡️</span>
                         <div class="color-picker-wrapper">
                             <input type="color" id="newColorPicker" value="#ff0000">
@@ -768,6 +772,7 @@
         const exportBtn = document.getElementById('exportBtn');
         const exportPngBtn = document.getElementById('exportPngBtn');
         const originalColorEl = document.getElementById('originalColor');
+        const originalColorHex = document.getElementById('originalColorHex');
         const newColorPicker = document.getElementById('newColorPicker');
         const applySwapBtn = document.getElementById('applySwapBtn');
         const resetBtn = document.getElementById('resetBtn');
@@ -1575,6 +1580,7 @@
             const [r, g, b] = colorKey.split(',').map(Number);
             originalColorEl.style.background = `rgb(${r}, ${g}, ${b})`;
             const hexColor = rgbToHex(r, g, b);
+            originalColorHex.value = hexColor.toUpperCase();
             newColorPicker.value = hexColor;
             newColorHex.value = hexColor.toUpperCase();
             
@@ -1598,11 +1604,22 @@
             
             // Record the swap in history (from original color)
             const oldHex = rgbToHex(oldR, oldG, oldB);
-            colorSwapHistory.push({
+            const swapEntry = {
                 from: { r: oldR, g: oldG, b: oldB, hex: oldHex },
                 to: { r: newR, g: newG, b: newB, hex: newHex },
                 hasSelection: hasSelection
-            });
+            };
+            
+            // Store selection mask if there is a selection (as compact array of selected indices)
+            if (hasSelection) {
+                const selectedIndices = [];
+                for (let i = 0; i < selectionMask.length; i++) {
+                    if (selectionMask[i] === 1) selectedIndices.push(i);
+                }
+                swapEntry.selectedIndices = selectedIndices;
+            }
+            
+            colorSwapHistory.push(swapEntry);
             
             // Apply swap to all frames
             for (const frameData of currentFrames) {
@@ -1662,9 +1679,62 @@
                     <span style="width: 14px; height: 14px; background: ${swap.from.hex}; border: 1px solid #555; border-radius: 2px;"></span>
                     →
                     <span style="width: 14px; height: 14px; background: ${swap.to.hex}; border: 1px solid #555; border-radius: 2px;"></span>
-                    <span style="color: #666;">${swap.from.hex} → ${swap.to.hex}</span>
+                    <span style="color: #666; flex: 1;">${swap.from.hex} → ${swap.to.hex}</span>
+                    <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this swap">✕</button>
                 </div>`
             ).join('');
+        }
+        
+        function undoSingleSwap(index) {
+            if (index < 0 || index >= colorSwapHistory.length) return;
+            
+            // Remove the swap at the given index
+            colorSwapHistory.splice(index, 1);
+            
+            // Rebuild frames from original and reapply remaining swaps
+            for (let i = 0; i < originalFrames.length; i++) {
+                currentFrames[i] = new Uint8ClampedArray(originalFrames[i]);
+            }
+            
+            // Reapply all remaining swaps in order
+            for (const swap of colorSwapHistory) {
+                const oldR = swap.from.r;
+                const oldG = swap.from.g;
+                const oldB = swap.from.b;
+                const newR = swap.to.r;
+                const newG = swap.to.g;
+                const newB = swap.to.b;
+                
+                // Build selection set for quick lookup if this swap had a selection
+                const selectedSet = swap.selectedIndices ? new Set(swap.selectedIndices) : null;
+                
+                for (const frameData of currentFrames) {
+                    for (let i = 0; i < frameData.length; i += 4) {
+                        const pixelIndex = i / 4;
+                        
+                        // If this swap had a selection, only apply to selected pixels
+                        if (selectedSet && !selectedSet.has(pixelIndex)) {
+                            continue;
+                        }
+                        
+                        if (frameData[i] === oldR && frameData[i + 1] === oldG && frameData[i + 2] === oldB) {
+                            frameData[i] = newR;
+                            frameData[i + 1] = newG;
+                            frameData[i + 2] = newB;
+                        }
+                    }
+                }
+            }
+            
+            // Update display
+            extractPalette();
+            renderCurrentFrame();
+            updateSwapHistoryDisplay();
+            
+            // Clear selection
+            selectedColor = null;
+            applySwapBtn.disabled = true;
+            originalColorEl.style.background = '#888';
         }
 
         function exportPreset() {
@@ -1715,9 +1785,19 @@
                     const { from, to } = swap;
                     let found = false;
                     
-                    // Check if this color exists in current frames
+                    // Build selection set for quick lookup if this swap had a selection
+                    const selectedSet = swap.selectedIndices ? new Set(swap.selectedIndices) : null;
+                    
+                    // Check if this color exists in current frames (respecting selection)
                     for (const frameData of currentFrames) {
                         for (let i = 0; i < frameData.length; i += 4) {
+                            const pixelIndex = i / 4;
+                            
+                            // If this swap had a selection, only check selected pixels
+                            if (selectedSet && !selectedSet.has(pixelIndex)) {
+                                continue;
+                            }
+                            
                             if (frameData[i] === from.r && frameData[i + 1] === from.g && frameData[i + 2] === from.b) {
                                 found = true;
                                 break;
@@ -1727,9 +1807,16 @@
                     }
                     
                     if (found) {
-                        // Apply this swap
+                        // Apply this swap (respecting selection)
                         for (const frameData of currentFrames) {
                             for (let i = 0; i < frameData.length; i += 4) {
+                                const pixelIndex = i / 4;
+                                
+                                // If this swap had a selection, only apply to selected pixels
+                                if (selectedSet && !selectedSet.has(pixelIndex)) {
+                                    continue;
+                                }
+                                
                                 if (frameData[i] === from.r && frameData[i + 1] === from.g && frameData[i + 2] === from.b) {
                                     frameData[i] = to.r;
                                     frameData[i + 1] = to.g;
