@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creating Character Variants with Palette Swapping - PixelPaletteSwap</title>
+    <meta name="description"
+        content="Step-by-step guide to creating multiple character skins, alt costumes, and enemy variants from a single sprite using palette swapping.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://pixelpaletteswap.com/guides/creating-character-variants">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <img src="../logo.png" alt="PixelPaletteSwap">
+                <span>PixelPaletteSwap</span>
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation"
+                onclick="document.querySelector('.nav-links').classList.toggle('open')">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link">Tool</a>
+                <a href="../guides.html" class="nav-link active">Guides</a>
+                <a href="../about.html" class="nav-link">About</a>
+                <a href="../contact.html" class="nav-link">Contact</a>
+                <a href="../privacy.html" class="nav-link">Privacy</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <div class="container">
+            <article class="article">
+                <div class="breadcrumb">
+                    <a href="../index.html">Home</a><span>→</span>
+                    <a href="../guides.html">Guides</a><span>→</span>
+                    <span>Creating Character Variants</span>
+                </div>
+
+                <h1>Creating Character Variants with Palette Swapping</h1>
+                <div class="article-meta">
+                    <span>📖 8 min read</span>
+                    <span>🏷️ Practical</span>
+                </div>
+
+                <p>One of the most powerful uses of palette swapping is creating character variants. Whether you need
+                    alternate costumes for a fighting game, team colors for multiplayer, or enemy recolors, this
+                    technique lets you multiply your character designs without redrawing.</p>
+
+                <h2>Planning Your Character for Variants</h2>
+
+                <p>The best character variants start with intentional planning. Before you begin, consider how your base
+                    sprite's colors are organized.</p>
+
+                <h3>Identify Color Groups</h3>
+                <p>Most characters can be broken into logical color groups:</p>
+                <ul>
+                    <li><strong>Skin tones:</strong> 2-4 colors for flesh, including highlights and shadows</li>
+                    <li><strong>Primary clothing:</strong> The main outfit color ramp (3-4 colors)</li>
+                    <li><strong>Secondary clothing:</strong> Accent pieces like belts, boots, trim</li>
+                    <li><strong>Hair:</strong> Usually 2-3 colors</li>
+                    <li><strong>Special elements:</strong> Weapons, armor, magic effects</li>
+                </ul>
+
+                <h3>Keep Groups Separate</h3>
+                <p>If your character's shirt and pants share the exact same colors, swapping one will change both.
+                    Unless that's intentional, use distinct colors for elements you want to swap independently.</p>
+
+                <h2>Creating Your First Variant</h2>
+
+                <h3>Step 1: Upload Your Base Sprite</h3>
+                <p>Load your character animation into <a href="../index.html">PixelPaletteSwap</a>. If you have a walk
+                    cycle, idle, and attack animation, process each one separately or combine them into a single sprite
+                    sheet.</p>
+
+                <h3>Step 2: Plan the New Palette</h3>
+                <p>Before touching the tool, sketch out what colors you want for your variant. Ask yourself:</p>
+                <ul>
+                    <li>What mood should this variant convey?</li>
+                    <li>Does it need to be instantly distinguishable from the original?</li>
+                    <li>Are there any colors to keep consistent (like skin tones)?</li>
+                </ul>
+
+                <h3>Step 3: Swap Colors Systematically</h3>
+                <p>Work through each color group methodically. For the clothing ramp, swap the darkest shade first, then
+                    the midtone, then the highlight. Keep the value relationships consistent—your new dark color should
+                    still read as a shadow.</p>
+
+                <h3>Step 4: Test in Context</h3>
+                <p>If possible, test your variant against game backgrounds. Some color combinations that look great in
+                    the editor may disappear against certain environments or clash with UI elements.</p>
+
+                <h2>Common Variant Types</h2>
+
+                <h3>Team/Player Colors</h3>
+                <p>For multiplayer games, create clearly distinguishable variants using contrasting colors. Classic
+                    combinations include red vs. blue, orange vs. purple, or yellow vs. green. Ensure silhouettes remain
+                    readable from a distance.</p>
+
+                <h3>Power-Up States</h3>
+                <p>Show character upgrades through color changes. Common conventions:</p>
+                <ul>
+                    <li>Fire power-up: Shift reds and oranges, add yellow highlights</li>
+                    <li>Ice power-up: Blues and whites, with cyan accents</li>
+                    <li>Electric: Yellows with white/blue lightning tints</li>
+                    <li>Powered-down: Desaturated or grayed-out version</li>
+                </ul>
+
+                <h3>Enemy Tiers</h3>
+                <p>Use color to indicate enemy difficulty:</p>
+                <ul>
+                    <li><strong>Basic:</strong> Cool or neutral colors (green, blue, gray)</li>
+                    <li><strong>Medium:</strong> Warmer colors (yellow, orange)</li>
+                    <li><strong>Dangerous:</strong> Hot colors (red, magenta)</li>
+                    <li><strong>Elite/Boss:</strong> Special treatment (gold accents, purple/black)</li>
+                </ul>
+
+                <h3>Unlockable Skins</h3>
+                <p>For progression rewards, create progressively more elaborate or desirable variants. Early unlocks
+                    might be simple hue shifts; later rewards could feature dramatic color schemes or tie-ins to game
+                    lore.</p>
+
+                <h2>Advanced Techniques</h2>
+
+                <h3>Partial Swaps</h3>
+                <p>Sometimes you only want to swap part of a character—like giving them a new shirt but keeping the same
+                    pants. Use the selection tools to mask areas, then swap only the colors in your selection.</p>
+
+                <h3>Saving Presets for Consistency</h3>
+                <p>When creating a variant, export the color mapping as a preset. Then apply that same preset to all
+                    animations of that character (walk, run, attack, etc.) to ensure perfect consistency.</p>
+
+                <h3>Building a Variant Library</h3>
+                <p>Consider your naming convention:</p>
+                <ul>
+                    <li>knight_blue_walk.gif</li>
+                    <li>knight_red_walk.gif</li>
+                    <li>knight_gold_walk.gif</li>
+                </ul>
+                <p>Consistent naming makes asset management much easier as your project grows.</p>
+
+                <div class="tip-box">
+                    <div class="tip-box-title">💡 Pro Tip</div>
+                    <p>Create a "variant sheet" image showing all color versions side by side. This serves as a quick
+                        reference and is great for marketing materials or game documentation.</p>
+                </div>
+
+                <h2>Common Pitfalls to Avoid</h2>
+
+                <ul>
+                    <li><strong>Swapping outline colors inconsistently:</strong> If your base uses dark blue outlines,
+                        ensure all variants maintain the same outline treatment.</li>
+                    <li><strong>Breaking value structure:</strong> Swapping a dark color to a light one can eliminate
+                        important shading information.</li>
+                    <li><strong>Forgetting secondary elements:</strong> Eyes, weapons, and accessories often get
+                        overlooked but need to work with the new palette.</li>
+                    <li><strong>Too-similar variants:</strong> If variants are hard to tell apart at a glance,
+                        exaggerate the color differences.</li>
+                </ul>
+
+                <div class="related-guides">
+                    <h3>Related Guides</h3>
+                    <div class="related-grid">
+                        <a href="palette-swapping-for-game-sprites.html" class="related-link">🎮 Palette Swapping for
+                            Games</a>
+                        <a href="batch-processing-with-presets.html" class="related-link">⚡ Batch Processing with
+                            Presets</a>
+                    </div>
+                </div>
+
+                <div class="cta-box">
+                    <h3>Create Your Variants</h3>
+                    <p style="color: var(--color-text-muted);">Ready to multiply your character count?</p>
+                    <a href="../index.html" class="btn">Open the Tool 🎨</a>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>PixelPaletteSwap</h4>
+                <ul class="footer-links">
+                    <li><a href="../index.html">Palette Swap Tool</a></li>
+                    <li><a href="../guides.html">Guides & Tutorials</a></li>
+                    <li><a href="../about.html">About Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul class="footer-links">
+                    <li><a href="../privacy.html">Privacy Policy</a></li>
+                    <li><a href="../contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024 PixelPaletteSwap.com. Made with ❤️ for the pixel art community.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

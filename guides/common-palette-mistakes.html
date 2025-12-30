@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Common Palette Mistakes and How to Fix Them - PixelPaletteSwap</title>
+    <meta name="description"
+        content="Avoid common pixel art palette mistakes. Learn to identify and fix issues with color choices, value contrast, and palette organization.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://pixelpaletteswap.com/guides/common-palette-mistakes">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <img src="../logo.png" alt="PixelPaletteSwap">
+                <span>PixelPaletteSwap</span>
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation"
+                onclick="document.querySelector('.nav-links').classList.toggle('open')">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link">Tool</a>
+                <a href="../guides.html" class="nav-link active">Guides</a>
+                <a href="../about.html" class="nav-link">About</a>
+                <a href="../contact.html" class="nav-link">Contact</a>
+                <a href="../privacy.html" class="nav-link">Privacy</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <div class="container">
+            <article class="article">
+                <div class="breadcrumb">
+                    <a href="../index.html">Home</a><span>→</span>
+                    <a href="../guides.html">Guides</a><span>→</span>
+                    <span>Common Palette Mistakes</span>
+                </div>
+
+                <h1>Common Palette Mistakes and How to Fix Them</h1>
+                <div class="article-meta">
+                    <span>📖 7 min read</span>
+                    <span>🏷️ Troubleshooting</span>
+                </div>
+
+                <p>Even experienced pixel artists make palette mistakes. Learning to identify and fix these issues will
+                    dramatically improve your artwork. Here are the most common problems and their solutions.</p>
+
+                <h2>Mistake #1: Insufficient Value Contrast</h2>
+                <p>The most common beginner mistake is choosing colors that look different in hue but have similar
+                    brightness (value). A red and green might seem distinct, but if they're the same brightness, your
+                    artwork will look muddy and unclear.</p>
+
+                <h3>How to Identify It</h3>
+                <p>Convert your artwork to grayscale. If different elements blend together and become indistinguishable,
+                    you have a value contrast problem.</p>
+
+                <h3>How to Fix It</h3>
+                <p>For every color used for shading or depth, ensure there's a clear value difference. Shadows should be
+                    noticeably darker, highlights noticeably lighter. Use PixelPaletteSwap to adjust specific colors to
+                    brighter or darker variants while keeping the hue.</p>
+
+                <h2>Mistake #2: Too Many Similar Colors</h2>
+                <p>Having five slightly different shades of blue when two would suffice wastes palette space and makes
+                    your art harder to manage. This often happens when using the eyedropper to sample colors from
+                    photos.</p>
+
+                <h3>How to Fix It</h3>
+                <p>Consolidate similar colors. In PixelPaletteSwap, swap all those similar blues to a single chosen
+                    blue. You'll be surprised how often this simplification actually improves the artwork by creating
+                    cleaner shapes.</p>
+
+                <h2>Mistake #3: Pure Black Outlines</h2>
+                <p>Using #000000 pure black for all outlines creates harsh, unnatural-looking pixel art. It can make
+                    colors appear washed out by comparison and creates a "coloring book" feel.</p>
+
+                <h3>How to Fix It</h3>
+                <p>Use colored outlines instead. Dark blue for cool-toned subjects, dark brown for warm-toned subjects.
+                    Or use a very dark version of the object's main color. This technique is called "selective
+                    outlining" and creates much more sophisticated artwork.</p>
+
+                <h2>Mistake #4: Random Saturation Levels</h2>
+                <p>Mixing highly saturated colors with very desaturated ones without purpose creates visual discord.
+                    Your bright neon character looks out of place against muted background colors.</p>
+
+                <h3>How to Fix It</h3>
+                <p>Establish a saturation range for your project and stick to it. If your backgrounds are muted, keep
+                    characters slightly more saturated to pop, but not absurdly so. Use PixelPaletteSwap to adjust
+                    colors toward consistent saturation levels.</p>
+
+                <h2>Mistake #5: No Hue Shifting</h2>
+                <p>Making shadows by simply darkening a color, or highlights by simply brightening it, creates flat,
+                    lifeless artwork. Real light doesn't work this way—shadows typically shift cool and highlights shift
+                    warm.</p>
+
+                <h3>How to Fix It</h3>
+                <p>When creating shading ramps, shift hue as you shift value. A green leaf's shadow might shift toward
+                    blue-green, while its highlight shifts toward yellow-green. This creates vibrant, living colors
+                    rather than muddy darkness.</p>
+
+                <h2>Mistake #6: Ignoring Color Temperature</h2>
+                <p>Mixing warm and cool colors without considering how they interact can create visual confusion. A
+                    character with warm skin, cool clothes, and neutral accessories looks incoherent.</p>
+
+                <h3>How to Fix It</h3>
+                <p>Establish a dominant temperature for your artwork. If it's a sunny beach scene, lean warm overall. If
+                    it's a snowy mountain, lean cool. Accent with the opposite temperature strategically—a warm campfire
+                    in a cold scene, for example.</p>
+
+                <h2>Mistake #7: Colors That Don't Exist in Your Palette</h2>
+                <p>This usually happens with anti-aliasing or when importing photos. You think you have 16 colors, but
+                    actually have 200 because of in-between shades at edges.</p>
+
+                <h3>How to Identify It</h3>
+                <p>PixelPaletteSwap shows your total color count when you upload an image. If it's much higher than
+                    expected, you have extra colors.</p>
+
+                <h3>How to Fix It</h3>
+                <p>Either work with intentionally clean pixel art from the start, or use PixelPaletteSwap to manually
+                    consolidate those extra colors into your intended palette.</p>
+
+                <h2>Mistake #8: Using Colors That Clash</h2>
+                <p>Certain color combinations vibrate unpleasantly when placed next to each other—like saturated red
+                    against saturated cyan. They literally hurt to look at.</p>
+
+                <h3>How to Fix It</h3>
+                <p>Either desaturate one of the clashing colors, add a neutral buffer between them, or swap one to a
+                    more harmonious hue. Study established palettes like PICO-8 to see how they avoid these clashes.</p>
+
+                <h2>Prevention: Use Established Palettes</h2>
+                <p>The easiest way to avoid most palette mistakes is to start with a curated palette like PICO-8,
+                    Endesga 32, or DawnBringer 16. These palettes are designed to work harmoniously, with proper value
+                    ranges and hue shifting built in.</p>
+
+                <div class="tip-box">
+                    <div class="tip-box-title">💡 Pro Tip</div>
+                    <p>When in doubt, reduce your palette. Fewer colors forces you to use each one more thoughtfully,
+                        often resulting in cleaner, more intentional artwork.</p>
+                </div>
+
+                <div class="related-guides">
+                    <h3>Related Guides</h3>
+                    <div class="related-grid">
+                        <a href="color-theory-for-pixel-art.html" class="related-link">🌈 Color Theory for Pixel Art</a>
+                        <a href="best-color-palettes-for-pixel-art.html" class="related-link">🎯 Best Color Palettes</a>
+                    </div>
+                </div>
+
+                <div class="cta-box">
+                    <h3>Fix Your Palette Issues</h3>
+                    <p style="color: var(--color-text-muted);">Upload your artwork and start correcting color problems.
+                    </p>
+                    <a href="../index.html" class="btn">Open the Tool 🎨</a>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>PixelPaletteSwap</h4>
+                <ul class="footer-links">
+                    <li><a href="../index.html">Palette Swap Tool</a></li>
+                    <li><a href="../guides.html">Guides & Tutorials</a></li>
+                    <li><a href="../about.html">About Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul class="footer-links">
+                    <li><a href="../privacy.html">Privacy Policy</a></li>
+                    <li><a href="../contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024 PixelPaletteSwap.com. Made with ❤️ for the pixel art community.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accessibility in Pixel Art: High Contrast Palettes - PixelPaletteSwap</title>
+    <meta name="description"
+        content="Make your pixel art more inclusive with colorblind-friendly palettes and high-contrast alternatives for better accessibility.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://pixelpaletteswap.com/guides/accessibility-high-contrast-palettes">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <img src="../logo.png" alt="PixelPaletteSwap">
+                <span>PixelPaletteSwap</span>
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation"
+                onclick="document.querySelector('.nav-links').classList.toggle('open')">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link">Tool</a>
+                <a href="../guides.html" class="nav-link active">Guides</a>
+                <a href="../about.html" class="nav-link">About</a>
+                <a href="../contact.html" class="nav-link">Contact</a>
+                <a href="../privacy.html" class="nav-link">Privacy</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <div class="container">
+            <article class="article">
+                <div class="breadcrumb">
+                    <a href="../index.html">Home</a><span>→</span>
+                    <a href="../guides.html">Guides</a><span>→</span>
+                    <span>Accessibility & High Contrast</span>
+                </div>
+
+                <h1>Accessibility in Pixel Art: High Contrast Palettes</h1>
+                <div class="article-meta">
+                    <span>📖 7 min read</span>
+                    <span>🏷️ Accessibility</span>
+                </div>
+
+                <p>Approximately 8% of men and 0.5% of women have some form of color vision deficiency. Creating
+                    accessible pixel art through thoughtful palette choices ensures everyone can enjoy your games and
+                    artwork. This guide covers colorblind-friendly design and high-contrast options.</p>
+
+                <h2>Understanding Color Vision Deficiency</h2>
+
+                <h3>Types of Color Blindness</h3>
+                <ul>
+                    <li><strong>Protanopia/Protanomaly:</strong> Reduced sensitivity to red light. Red appears darker,
+                        red-green distinctions are difficult.</li>
+                    <li><strong>Deuteranopia/Deuteranomaly:</strong> Reduced sensitivity to green light. The most common
+                        type. Similar difficulties with red-green.</li>
+                    <li><strong>Tritanopia/Tritanomaly:</strong> Reduced sensitivity to blue light. Rare. Blue-yellow
+                        distinctions are difficult.</li>
+                    <li><strong>Achromatopsia:</strong> Complete color blindness (seeing only grayscale). Very rare.
+                    </li>
+                </ul>
+
+                <h3>The Red-Green Problem</h3>
+                <p>Because deuteranomaly and protanomaly are most common, purely red vs. green distinctions are
+                    problematic. Many games' "poison = green, fire = red" conventions are invisible to colorblind
+                    players.</p>
+
+                <h2>Designing Colorblind-Friendly Palettes</h2>
+
+                <h3>Don't Rely on Hue Alone</h3>
+                <p>The golden rule: never convey information through color (hue) alone. Always include a secondary
+                    indicator—value difference, pattern, shape, or icon.</p>
+
+                <h3>Maximize Value Contrast</h3>
+                <p>Even if someone can't distinguish red from green, they can distinguish light from dark. Ensure
+                    game-critical elements differ significantly in brightness, not just hue. Use PixelPaletteSwap to
+                    create variants where one color is clearly darker than another.</p>
+
+                <h3>Blue and Orange Work Well</h3>
+                <p>The blue-orange axis is distinguishable by most colorblind individuals. Consider using blue vs.
+                    orange instead of red vs. green for team colors or opposing factions.</p>
+
+                <h3>Avoid Problematic Combinations</h3>
+                <p>Combinations that look similar to many colorblind users:</p>
+                <ul>
+                    <li>Red and Green (at similar brightness)</li>
+                    <li>Red and Brown</li>
+                    <li>Green and Brown</li>
+                    <li>Blue and Purple</li>
+                    <li>Light green and Yellow</li>
+                </ul>
+
+                <h2>Creating Accessibility Options</h2>
+
+                <h3>Colorblind Mode</h3>
+                <p>Offer an in-game colorblind mode that swaps problematic colors. Using PixelPaletteSwap, create
+                    alternate versions of all sprites where red health is replaced with blue, or green bonuses become
+                    yellow.</p>
+
+                <h3>High Contrast Mode</h3>
+                <p>For players with low vision, extreme value contrast helps visibility. Create high-contrast variants
+                    by:</p>
+                <ul>
+                    <li>Increasing the gap between light and dark colors</li>
+                    <li>Using pure black for outlines and shadows</li>
+                    <li>Using very bright colors for important elements</li>
+                    <li>Reducing midtones to emphasize extremes</li>
+                </ul>
+
+                <h3>Symbol/Pattern Addition</h3>
+                <p>Where palette swapping alone isn't enough, consider sprite modifications that add patterns or
+                    symbols. A red enemy and red-to-players-swapped-blue enemy could also have different markings.</p>
+
+                <h2>Practical Palette Adjustments</h2>
+
+                <h3>Health and Damage</h3>
+                <p>Instead of green (healthy) vs. red (damaged), try:</p>
+                <ul>
+                    <li>Blue (healthy) vs. Orange (damaged)</li>
+                    <li>Green (healthy) vs. Gray/Desaturated (damaged)</li>
+                    <li>Full brightness vs. Dimmed brightness</li>
+                </ul>
+
+                <h3>Teams and Factions</h3>
+                <p>Replace red vs. green teams with:</p>
+                <ul>
+                    <li>Blue vs. Orange</li>
+                    <li>Purple vs. Yellow</li>
+                    <li>Light vs. Dark (different brightness)</li>
+                </ul>
+
+                <h3>Environmental Hazards</h3>
+                <p>Instead of relying on color alone (green poison, red fire, blue ice), pair hazards with distinct
+                    shapes and add value contrast against backgrounds they appear on.</p>
+
+                <h2>Testing Your Accessibility</h2>
+
+                <h3>Simulation Tools</h3>
+                <p>Use colorblindness simulation tools to preview how your artwork appears to colorblind users. Many
+                    image editors include these filters, or use online simulators. Review your palette swaps through
+                    these lenses.</p>
+
+                <h3>Grayscale Test</h3>
+                <p>Convert your artwork to grayscale. If critical information becomes indistinguishable, add value
+                    contrast. All gameplay-important distinctions should be visible in grayscale.</p>
+
+                <h3>Player Feedback</h3>
+                <p>If possible, have colorblind players test your game. Real-world feedback is invaluable for catching
+                    issues simulators might miss.</p>
+
+                <div class="tip-box">
+                    <div class="tip-box-title">💡 Pro Tip</div>
+                    <p>Build accessibility into your base design rather than as an afterthought. Designing for
+                        colorblindness from the start often results in clearer artwork for everyone.</p>
+                </div>
+
+                <h2>Accessible Palette Recommendations</h2>
+
+                <p>Several established palettes are designed with accessibility in mind:</p>
+
+                <ul>
+                    <li><strong>ColorBrewer palettes:</strong> Scientifically designed for distinguishability</li>
+                    <li><strong>IBM's accessible palette:</strong> Corporate-tested for inclusivity</li>
+                    <li><strong>Wong palette:</strong> An 8-color scheme optimized for colorblind viewers</li>
+                </ul>
+
+                <p>You can import these as reference images in PixelPaletteSwap and swap your colors to match their
+                    accessible options.</p>
+
+                <div class="related-guides">
+                    <h3>Related Guides</h3>
+                    <div class="related-grid">
+                        <a href="color-theory-for-pixel-art.html" class="related-link">🌈 Color Theory for Pixel Art</a>
+                        <a href="creating-character-variants.html" class="related-link">👥 Creating Character
+                            Variants</a>
+                    </div>
+                </div>
+
+                <div class="cta-box">
+                    <h3>Create Accessible Variants</h3>
+                    <p style="color: var(--color-text-muted);">Build inclusive pixel art for all players.</p>
+                    <a href="../index.html" class="btn">Open the Tool 🎨</a>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>PixelPaletteSwap</h4>
+                <ul class="footer-links">
+                    <li><a href="../index.html">Palette Swap Tool</a></li>
+                    <li><a href="../guides.html">Guides & Tutorials</a></li>
+                    <li><a href="../about.html">About Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul class="footer-links">
+                    <li><a href="../privacy.html">Privacy Policy</a></li>
+                    <li><a href="../contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024 PixelPaletteSwap.com. Made with ❤️ for the pixel art community.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

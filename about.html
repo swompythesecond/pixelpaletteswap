@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - PixelPaletteSwap | Free Pixel Art Color Editing Tool</title>
+    <meta name="description"
+        content="Learn about PixelPaletteSwap - a free online tool for swapping colors in pixel art. Built for pixel artists, game developers, and designers.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://pixelpaletteswap.com/about">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <img src="logo.png" alt="PixelPaletteSwap">
+                <span>PixelPaletteSwap</span>
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation"
+                onclick="document.querySelector('.nav-links').classList.toggle('open')">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Tool</a>
+                <a href="guides.html" class="nav-link">Guides</a>
+                <a href="about.html" class="nav-link active">About</a>
+                <a href="contact.html" class="nav-link">Contact</a>
+                <a href="privacy.html" class="nav-link">Privacy</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="page-content">
+        <div class="container">
+            <!-- Hero Section -->
+            <div class="about-hero">
+                <h1 class="page-title">🎨 About PixelPaletteSwap</h1>
+                <p class="page-subtitle">A free tool built by pixel art enthusiasts, for pixel art enthusiasts</p>
+            </div>
+
+            <!-- What Is Section -->
+            <div class="card mb-40">
+                <h2>What Is PixelPaletteSwap?</h2>
+                <p style="color: var(--color-text-muted); line-height: 1.8; margin-bottom: 20px;">
+                    PixelPaletteSwap is a free, browser-based tool that lets you instantly swap colors in pixel art
+                    images and GIF animations. Whether you're creating character variants, experimenting with different
+                    color schemes, or batch-processing game assets, our tool makes palette manipulation quick and
+                    intuitive.
+                </p>
+                <p style="color: var(--color-text-muted); line-height: 1.8; margin-bottom: 20px;">
+                    Unlike traditional image editors that require complex workflows to change colors, PixelPaletteSwap
+                    is purpose-built for pixel art. Simply upload your image, click on a color, choose a replacement,
+                    and watch every pixel of that color change across all frames instantly.
+                </p>
+                <p style="color: var(--color-text-muted); line-height: 1.8;">
+                    Best of all, everything happens right in your browser. Your images never leave your computer—all
+                    processing is done locally using JavaScript, ensuring complete privacy and zero upload wait times.
+                </p>
+            </div>
+
+            <!-- Who It's For -->
+            <h2 class="text-center mb-20" style="color: var(--color-accent);">Who Is This Tool For?</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <div class="about-card-icon">🎮</div>
+                    <h3>Game Developers</h3>
+                    <p>Create multiple character variants, team colors, power-up states, and enemy recolors without
+                        redrawing sprites from scratch. Save hours of production time.</p>
+                </div>
+                <div class="about-card">
+                    <div class="about-card-icon">🖌️</div>
+                    <h3>Pixel Artists</h3>
+                    <p>Experiment with different color palettes before committing. Test how your art looks with various
+                        color schemes or match a specific aesthetic quickly.</p>
+                </div>
+                <div class="about-card">
+                    <div class="about-card-icon">🎨</div>
+                    <h3>Designers & Hobbyists</h3>
+                    <p>Whether you're making assets for a jam, creating Discord emotes, or just having fun with pixel
+                        art, this tool makes color editing accessible to everyone.</p>
+                </div>
+            </div>
+
+            <!-- Problem It Solves -->
+            <div class="card mt-40 mb-40">
+                <h2>The Problem We Solve</h2>
+                <p style="color: var(--color-text-muted); line-height: 1.8; margin-bottom: 20px;">
+                    Creating color variants of pixel art has traditionally been tedious. In most image editors, you need
+                    to manually select colors using magic wand tools, deal with anti-aliasing edge cases, and repeat the
+                    process for every single frame of an animation. For a 60-frame walk cycle with 4 color variants,
+                    that's potentially hundreds of manual operations.
+                </p>
+                <p style="color: var(--color-text-muted); line-height: 1.8; margin-bottom: 20px;">
+                    PixelPaletteSwap solves this by treating your pixel art as data. We extract the color palette, let
+                    you remap colors, and apply changes to all frames simultaneously. What used to take hours now takes
+                    seconds.
+                </p>
+                <p style="color: var(--color-text-muted); line-height: 1.8;">
+                    Need to create 5 different team colors for your game's characters? Upload once, swap colors 5 times,
+                    export 5 GIFs. Done.
+                </p>
+            </div>
+
+            <!-- Features -->
+            <h2 class="text-center mb-20" style="color: var(--color-accent);">Key Features</h2>
+            <div class="about-grid mb-40">
+                <div class="about-card">
+                    <div class="about-card-icon">📁</div>
+                    <h3>Multi-Format Support</h3>
+                    <p>Upload GIFs, PNGs, JPGs, and WebP images. Load animated GIFs or multiple static images as frame
+                        sequences.</p>
+                </div>
+                <div class="about-card">
+                    <div class="about-card-icon">✂️</div>
+                    <h3>Selection Tools</h3>
+                    <p>Use rectangle or polygon selection to swap colors in specific areas only—perfect for complex
+                        sprites.</p>
+                </div>
+                <div class="about-card">
+                    <div class="about-card-icon">🎯</div>
+                    <h3>Eyedropper Picking</h3>
+                    <p>Click directly on your image to select colors. No need to guess hex codes or search through
+                        swatches.</p>
+                </div>
+                <div class="about-card">
+                    <div class="about-card-icon">🔄</div>
+                    <h3>Live Preview</h3>
+                    <p>See your changes in real-time with animation playback. Adjust speed and zoom for precise
+                        inspection.</p>
+                </div>
+                <div class="about-card">
+                    <div class="about-card-icon">💾</div>
+                    <h3>Preset System</h3>
+                    <p>Save your color mappings as reusable presets. Apply the same palette swap to any matching sprite.
+                    </p>
+                </div>
+                <div class="about-card">
+                    <div class="about-card-icon">📦</div>
+                    <h3>Flexible Export</h3>
+                    <p>Export as GIF, individual PNG frames, or a ZIP archive of all frames for game engine import.</p>
+                </div>
+            </div>
+
+            <!-- About The Creator -->
+            <div class="card mb-40">
+                <h2>About The Creator</h2>
+                <p style="color: var(--color-text-muted); line-height: 1.8; margin-bottom: 20px;">
+                    PixelPaletteSwap was built by an independent developer who loves pixel art and game development.
+                    After spending too many hours manually recoloring sprites in various projects, the need for a
+                    simple, fast palette swap tool became clear.
+                </p>
+                <p style="color: var(--color-text-muted); line-height: 1.8; margin-bottom: 20px;">
+                    Rather than keeping the tool private, we decided to share it with the community. The pixel art and
+                    indie game dev communities have given so much—free tutorials, open-source tools, inspiring
+                    artwork—and this is our way of giving back.
+                </p>
+                <p style="color: var(--color-text-muted); line-height: 1.8;">
+                    The tool is completely free to use, with no account required, no watermarks, and no hidden
+                    limitations. We hope it helps you create something amazing.
+                </p>
+            </div>
+
+            <!-- CTA -->
+            <div class="cta-box">
+                <h3>Ready to Get Started?</h3>
+                <p style="color: var(--color-text-muted);">Try the palette swap tool now—no signup required.</p>
+                <a href="index.html" class="btn">Open the Tool 🎨</a>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>PixelPaletteSwap</h4>
+                <ul class="footer-links">
+                    <li><a href="index.html">Palette Swap Tool</a></li>
+                    <li><a href="guides.html">Guides & Tutorials</a></li>
+                    <li><a href="about.html">About Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <ul class="footer-links">
+                    <li><a href="guides/how-to-swap-color-palettes.html">Getting Started</a></li>
+                    <li><a href="guides/best-color-palettes-for-pixel-art.html">Best Palettes</a></li>
+                    <li><a href="guides/color-theory-for-pixel-art.html">Color Theory</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul class="footer-links">
+                    <li><a href="privacy.html">Privacy Policy</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024 PixelPaletteSwap.com. Made with ❤️ for the pixel art community.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

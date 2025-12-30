@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizing Pixel Art Palettes for Games - PixelPaletteSwap</title>
+    <meta name="description"
+        content="Technical guide to reducing palette sizes, preparing pixel art assets for game engines, and optimizing for performance.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://pixelpaletteswap.com/guides/optimizing-palettes-for-games">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <img src="../logo.png" alt="PixelPaletteSwap">
+                <span>PixelPaletteSwap</span>
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation"
+                onclick="document.querySelector('.nav-links').classList.toggle('open')">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link">Tool</a>
+                <a href="../guides.html" class="nav-link active">Guides</a>
+                <a href="../about.html" class="nav-link">About</a>
+                <a href="../contact.html" class="nav-link">Contact</a>
+                <a href="../privacy.html" class="nav-link">Privacy</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <div class="container">
+            <article class="article">
+                <div class="breadcrumb">
+                    <a href="../index.html">Home</a><span>→</span>
+                    <a href="../guides.html">Guides</a><span>→</span>
+                    <span>Optimizing Palettes for Games</span>
+                </div>
+
+                <h1>Optimizing Pixel Art Palettes for Games</h1>
+                <div class="article-meta">
+                    <span>📖 10 min read</span>
+                    <span>🏷️ Advanced</span>
+                </div>
+
+                <p>When your pixel art leaves the editor and enters a game engine, optimization becomes important. This
+                    guide covers technical aspects of palette management for better performance, smaller file sizes, and
+                    smoother workflow integration.</p>
+
+                <h2>Why Palette Optimization Matters</h2>
+
+                <h3>File Size</h3>
+                <p>Indexed PNG files with 16 colors are significantly smaller than full-color PNGs. For a game with
+                    hundreds of sprites and animations, this can mean megabytes saved, improving load times and reducing
+                    download sizes.</p>
+
+                <h3>Memory Efficiency</h3>
+                <p>Modern game engines are efficient, but for mobile or retro-style games targeting older hardware,
+                    smaller textures mean more assets can stay in memory simultaneously.</p>
+
+                <h3>Shader Compatibility</h3>
+                <p>Palette-based sprites can use specialized shaders for effects like damage flashes, invisibility, or
+                    environmental tinting—all without creating additional texture variants.</p>
+
+                <h2>Auditing Your Current Palette</h2>
+
+                <p>Before optimizing, understand your starting point. Upload your sprites to PixelPaletteSwap to see the
+                    actual color count. You might discover:</p>
+
+                <ul>
+                    <li><strong>Anti-aliasing artifacts:</strong> Hundreds of in-between colors from smooth edges</li>
+                    <li><strong>Near-duplicate colors:</strong> #FF0000 and #FE0000 appearing as separate colors</li>
+                    <li><strong>Unused colors:</strong> Colors in the file that appear on very few pixels</li>
+                </ul>
+
+                <h2>Reducing Color Count</h2>
+
+                <h3>Consolidating Similar Colors</h3>
+                <p>The most direct optimization is merging near-identical colors. In PixelPaletteSwap, swap all
+                    variations of a color to a single canonical version. This is especially important for colors that
+                    only differ by 1-2 values in RGB.</p>
+
+                <h3>Removing Anti-Aliasing</h3>
+                <p>For crisp pixel art, consider whether anti-aliasing is serving your aesthetic. Those smooth edges
+                    might be adding 50+ extra colors. Swap transitional colors to either the foreground or background
+                    color for clean edges.</p>
+
+                <h3>Questioning Each Color</h3>
+                <p>For aggressive optimization, evaluate each color: "Would the art suffer significantly if this was
+                    merged with another color?" Often you'll find shades that were included "just in case" but aren't
+                    actually necessary.</p>
+
+                <h2>Standard Palette Sizes</h2>
+
+                <p>The following are common palette targets in pixel art:</p>
+
+                <ul>
+                    <li><strong>4 colors:</strong> GameBoy-style, extremely optimized</li>
+                    <li><strong>16 colors:</strong> SNES/GBA sprite standard, good balance</li>
+                    <li><strong>32 colors:</strong> Extended palette, allows more shading nuance</li>
+                    <li><strong>64 colors:</strong> Generous palette for detailed work</li>
+                    <li><strong>256 colors:</strong> Maximum for indexed PNG, rarely needed</li>
+                </ul>
+
+                <p>For best compression and compatibility, stick to power-of-two sizes. Many tools and engines optimize
+                    for these specific counts.</p>
+
+                <h2>Shared vs. Per-Sprite Palettes</h2>
+
+                <h3>Global Shared Palette</h3>
+                <p>All sprites in your game use the same master palette (like PICO-8's 16 colors). This ensures perfect
+                    color consistency and simplifies art management but limits individual sprite flexibility.</p>
+
+                <h3>Per-Sprite Palettes</h3>
+                <p>Each sprite or sprite category has its own optimal palette. More flexible, but can lead to color
+                    inconsistency if not carefully managed.</p>
+
+                <h3>Hybrid Approach</h3>
+                <p>Use a shared palette for categories: all characters share one palette, all environments share
+                    another. This balances flexibility with consistency.</p>
+
+                <h2>Export Settings for Game Engines</h2>
+
+                <h3>Unity</h3>
+                <ul>
+                    <li>Export as PNG sequences</li>
+                    <li>In Unity, set Texture Type to "Sprite"</li>
+                    <li>Disable compression for pixel-perfect display</li>
+                    <li>Set Filter Mode to "Point (no filter)"</li>
+                </ul>
+
+                <h3>Godot</h3>
+                <ul>
+                    <li>Export as PNG or use sprite sheets</li>
+                    <li>Disable "Filter" on import</li>
+                    <li>Consider using Godot's built-in palette swap shaders for runtime variants</li>
+                </ul>
+
+                <h3>GameMaker</h3>
+                <ul>
+                    <li>Import PNG sequences as sprite strips</li>
+                    <li>Disable interpolation in texture settings</li>
+                    <li>Use "Separate Texture Page" for frequently animated sprites</li>
+                </ul>
+
+                <h2>Preparing for Runtime Palette Swapping</h2>
+
+                <p>Some games implement palette swapping at runtime through shaders. To prepare your assets:</p>
+
+                <ol>
+                    <li><strong>Use indexed colors:</strong> Create sprites where each pixel references a palette index,
+                        not a literal color</li>
+                    <li><strong>Create a palette texture:</strong> A 1-pixel-tall image containing all palette colors in
+                        order</li>
+                    <li><strong>Apply a palette swap shader:</strong> The shader looks up the palette color at runtime
+                    </li>
+                </ol>
+
+                <p>This technique allows unlimited color variants without additional texture memory—you only swap the
+                    tiny palette texture.</p>
+
+                <h2>Testing Your Optimizations</h2>
+
+                <p>After optimizing, verify quality:</p>
+
+                <ul>
+                    <li>View artwork at 1:1 and scaled sizes to check for artifacts</li>
+                    <li>Test against actual game backgrounds</li>
+                    <li>Watch animations to ensure no frames look off</li>
+                    <li>Compare file sizes before and after</li>
+                </ul>
+
+                <div class="tip-box">
+                    <div class="tip-box-title">💡 Pro Tip</div>
+                    <p>Keep your original, unoptimized files as master copies. Only apply optimization to the exported
+                        game-ready versions.</p>
+                </div>
+
+                <div class="related-guides">
+                    <h3>Related Guides</h3>
+                    <div class="related-grid">
+                        <a href="palette-swapping-for-game-sprites.html" class="related-link">🎮 Palette Swapping for
+                            Games</a>
+                        <a href="batch-processing-with-presets.html" class="related-link">⚡ Batch Processing with
+                            Presets</a>
+                    </div>
+                </div>
+
+                <div class="cta-box">
+                    <h3>Optimize Your Palette</h3>
+                    <p style="color: var(--color-text-muted);">Consolidate colors and reduce your palette now.</p>
+                    <a href="../index.html" class="btn">Open the Tool 🎨</a>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>PixelPaletteSwap</h4>
+                <ul class="footer-links">
+                    <li><a href="../index.html">Palette Swap Tool</a></li>
+                    <li><a href="../guides.html">Guides & Tutorials</a></li>
+                    <li><a href="../about.html">About Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul class="footer-links">
+                    <li><a href="../privacy.html">Privacy Policy</a></li>
+                    <li><a href="../contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024 PixelPaletteSwap.com. Made with ❤️ for the pixel art community.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

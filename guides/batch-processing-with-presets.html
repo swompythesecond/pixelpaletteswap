@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Processing Sprites with Preset Palettes - PixelPaletteSwap</title>
+    <meta name="description"
+        content="Save time by creating reusable color presets and applying them to multiple animations. Learn efficient batch processing workflows.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://pixelpaletteswap.com/guides/batch-processing-with-presets">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <img src="../logo.png" alt="PixelPaletteSwap">
+                <span>PixelPaletteSwap</span>
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation"
+                onclick="document.querySelector('.nav-links').classList.toggle('open')">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link">Tool</a>
+                <a href="../guides.html" class="nav-link active">Guides</a>
+                <a href="../about.html" class="nav-link">About</a>
+                <a href="../contact.html" class="nav-link">Contact</a>
+                <a href="../privacy.html" class="nav-link">Privacy</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <div class="container">
+            <article class="article">
+                <div class="breadcrumb">
+                    <a href="../index.html">Home</a><span>→</span>
+                    <a href="../guides.html">Guides</a><span>→</span>
+                    <span>Batch Processing with Presets</span>
+                </div>
+
+                <h1>Batch Processing Sprites with Preset Palettes</h1>
+                <div class="article-meta">
+                    <span>📖 6 min read</span>
+                    <span>🏷️ Workflow</span>
+                </div>
+
+                <p>When you need to create the same color variant across dozens of sprites, manual swapping isn't
+                    practical. The preset system in PixelPaletteSwap lets you save color mappings and apply them
+                    consistently across all related assets. This guide covers efficient batch processing workflows.</p>
+
+                <h2>Understanding Presets</h2>
+
+                <p>A preset is a saved record of which original colors map to which new colors. When you create a "blue
+                    team" variant by swapping red → blue, brown → navy, and orange → cyan, those three mappings are
+                    saved together. Loading that preset on any sprite with matching original colors will apply the same
+                    transformations.</p>
+
+                <h3>Preset File Format</h3>
+                <p>Presets are saved as JSON files, making them human-readable and easy to version control. Each preset
+                    contains an array of color pairs: original hex code and replacement hex code.</p>
+
+                <h2>Creating Your First Preset</h2>
+
+                <h3>Step 1: Perfect One Sprite</h3>
+                <p>Start with one representative sprite—usually your main character's idle animation. Take time to get
+                    this exactly right, as every other sprite will use this as a template.</p>
+
+                <h3>Step 2: Swap All Colors</h3>
+                <p>Swap every color that needs to change. Don't forget secondary colors like outline tints or small
+                    accent details. The more complete your preset, the more consistently it will apply across other
+                    sprites.</p>
+
+                <h3>Step 3: Export the Preset</h3>
+                <p>Click "Export" in the Color Swap Presets section. Give it a descriptive name like
+                    <code>knight_blue_team.json</code>. Save it somewhere organized—ideally in a "presets" folder
+                    alongside your project files.</p>
+
+                <h2>Applying Presets to Multiple Sprites</h2>
+
+                <h3>Sequential Workflow</h3>
+                <p>For small batches (under 10 sprites):</p>
+                <ol>
+                    <li>Upload the next sprite</li>
+                    <li>Click "Import" and load your preset</li>
+                    <li>The tool automatically applies all matching color swaps</li>
+                    <li>Export the result</li>
+                    <li>Repeat for each sprite</li>
+                </ol>
+
+                <h3>What "Matching" Means</h3>
+                <p>The preset matches colors exactly by hex code. If your preset says "swap #FF0000 to #0000FF," it will
+                    only affect pixels that are exactly #FF0000. A slightly different shade like #FF0001 won't be
+                    affected.</p>
+
+                <p>This is why consistency in your original sprites matters. If your walk cycle uses #FF0000 but your
+                    attack animation uses #FF0102 for what looks like the same red, the preset won't catch both.</p>
+
+                <h2>Handling Inconsistent Palettes</h2>
+
+                <h3>Palette Auditing</h3>
+                <p>Before batch processing, audit your sprites. Upload each one and check the detected color count. If
+                    identical elements show different colors across sprites, you have inconsistency to fix.</p>
+
+                <h3>Normalizing First</h3>
+                <p>Consider doing a normalization pass first. Create a "master palette" preset that maps any
+                    near-duplicate colors to their canonical versions. Apply this to all sprites before doing your
+                    variant swaps.</p>
+
+                <h3>Expanding Presets</h3>
+                <p>If you encounter a sprite with colors your preset doesn't cover, add the new mappings manually. Then
+                    export an updated preset. Over time, your preset becomes more complete.</p>
+
+                <h2>Organizing Multiple Presets</h2>
+
+                <h3>Naming Conventions</h3>
+                <p>Use consistent, descriptive names:</p>
+                <ul>
+                    <li><code>character_blue_team.json</code></li>
+                    <li><code>character_red_team.json</code></li>
+                    <li><code>character_halloween.json</code></li>
+                    <li><code>environment_winter.json</code></li>
+                </ul>
+
+                <h3>Folder Structure</h3>
+                <p>Keep presets organized by project and category:</p>
+                <pre
+                    style="background: var(--color-card-bg); padding: 15px; border-radius: 8px; color: var(--color-text-muted); overflow-x: auto;">
+/MyGame
+  /Art
+    /Sprites
+    /Presets
+      /Characters
+        knight_blue.json
+        knight_red.json
+      /Environments
+        forest_autumn.json
+        forest_winter.json
+                </pre>
+
+                <h3>Version Control</h3>
+                <p>Commit your preset JSON files alongside your art assets. When you adjust a color mapping, the change
+                    is tracked and can be rolled back if needed.</p>
+
+                <h2>Workflow Best Practices</h2>
+
+                <h3>Test Before Batch</h3>
+                <p>Apply your preset to 2-3 varied sprites before processing dozens. Catch issues early on a walking
+                    sprite, attacking sprite, and special ability sprite.</p>
+
+                <h3>Keep Originals Separate</h3>
+                <p>Never overwrite originals. Export variants to a separate folder:</p>
+                <ul>
+                    <li><code>/sprites/knight/original/</code></li>
+                    <li><code>/sprites/knight/blue_team/</code></li>
+                    <li><code>/sprites/knight/red_team/</code></li>
+                </ul>
+
+                <h3>Document Preset Contents</h3>
+                <p>Create a simple readme noting what each preset does. Future you (or team members) will appreciate
+                    knowing that <code>halloween.json</code> swaps greens to purples and adds orange tints.</p>
+
+                <div class="tip-box">
+                    <div class="tip-box-title">💡 Pro Tip</div>
+                    <p>Create a visual reference sheet showing the original sprite next to each variant. Include the
+                        preset filename so anyone can reproduce the result.</p>
+                </div>
+
+                <h2>Common Issues and Solutions</h2>
+
+                <h3>"Preset didn't change anything"</h3>
+                <p>The most common cause: color mismatch. Your preset was made on a sprite with #FF0000 but this sprite
+                    uses #FF0001. Re-audit the colors and either fix the sprite or update the preset.</p>
+
+                <h3>"Some colors changed, others didn't"</h3>
+                <p>You have a partial match. The preset is working for some colors but missing others. Open the original
+                    sprite the preset was created from and compare palettes.</p>
+
+                <h3>"The result looks wrong"</h3>
+                <p>Check if the sprite has colors the preset wasn't designed for. A different character might have skin
+                    tones that weren't in your original preset, which now remain unchanged and clash.</p>
+
+                <div class="related-guides">
+                    <h3>Related Guides</h3>
+                    <div class="related-grid">
+                        <a href="creating-character-variants.html" class="related-link">👥 Creating Character
+                            Variants</a>
+                        <a href="palette-swapping-for-game-sprites.html" class="related-link">🎮 Palette Swapping for
+                            Games</a>
+                    </div>
+                </div>
+
+                <div class="cta-box">
+                    <h3>Start Batch Processing</h3>
+                    <p style="color: var(--color-text-muted);">Create your first preset and streamline your workflow.
+                    </p>
+                    <a href="../index.html" class="btn">Open the Tool 🎨</a>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>PixelPaletteSwap</h4>
+                <ul class="footer-links">
+                    <li><a href="../index.html">Palette Swap Tool</a></li>
+                    <li><a href="../guides.html">Guides & Tutorials</a></li>
+                    <li><a href="../about.html">About Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul class="footer-links">
+                    <li><a href="../privacy.html">Privacy Policy</a></li>
+                    <li><a href="../contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024 PixelPaletteSwap.com. Made with ❤️ for the pixel art community.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

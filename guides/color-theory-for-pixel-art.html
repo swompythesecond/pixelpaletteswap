@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Understanding Color Theory for Pixel Art - PixelPaletteSwap</title>
+    <meta name="description"
+        content="Master color theory fundamentals for pixel art. Learn about hue, saturation, value, and how they apply to limited-palette artwork.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://pixelpaletteswap.com/guides/color-theory-for-pixel-art">
+    <link rel="icon" type="image/x-icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-logo">
+                <img src="../logo.png" alt="PixelPaletteSwap">
+                <span>PixelPaletteSwap</span>
+            </a>
+            <button class="nav-toggle" aria-label="Toggle navigation"
+                onclick="document.querySelector('.nav-links').classList.toggle('open')">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link">Tool</a>
+                <a href="../guides.html" class="nav-link active">Guides</a>
+                <a href="../about.html" class="nav-link">About</a>
+                <a href="../contact.html" class="nav-link">Contact</a>
+                <a href="../privacy.html" class="nav-link">Privacy</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-content">
+        <div class="container">
+            <article class="article">
+                <div class="breadcrumb">
+                    <a href="../index.html">Home</a><span>→</span>
+                    <a href="../guides.html">Guides</a><span>→</span>
+                    <span>Color Theory for Pixel Art</span>
+                </div>
+
+                <h1>Understanding Color Theory for Pixel Art</h1>
+                <div class="article-meta">
+                    <span>📖 12 min read</span>
+                    <span>🏷️ Foundational</span>
+                </div>
+
+                <p>Color theory is the foundation of all visual art, but it takes on special importance in pixel art
+                    where every color choice is highly visible due to limited palettes. Understanding these principles
+                    will transform how you approach color selection and palette swapping.</p>
+
+                <h2>The Three Properties of Color</h2>
+
+                <h3>Hue</h3>
+                <p>Hue is what most people mean when they say "color"—red, blue, green, yellow. It's the position on the
+                    color wheel. When swapping palettes, changing hue is the most dramatic transformation: making a
+                    green character red completely changes their identity while preserving all other qualities.</p>
+
+                <h3>Saturation</h3>
+                <p>Saturation describes a color's intensity or purity. Fully saturated colors are vivid and pure;
+                    desaturated colors approach gray. In pixel art, saturation helps create visual hierarchy—more
+                    saturated elements draw the eye first, while desaturated elements recede.</p>
+
+                <h3>Value (Brightness)</h3>
+                <p>Value is how light or dark a color is. This is arguably the most important property in pixel art.
+                    Good value structure creates readable artwork even when converted to grayscale. When swapping
+                    palettes, maintaining similar value relationships is crucial for preserving form and depth.</p>
+
+                <div class="tip-box">
+                    <div class="tip-box-title">💡 Key Insight</div>
+                    <p>Value does the heavy lifting in art. You can use any hue you want, but if your values are wrong,
+                        the artwork won't read. Always check your work in grayscale.</p>
+                </div>
+
+                <h2>The Color Wheel and Relationships</h2>
+
+                <h3>Complementary Colors</h3>
+                <p>Colors opposite each other on the color wheel (red/green, blue/orange, yellow/purple). When placed
+                    adjacent, they create maximum contrast and visual vibration. Use carefully—they can be striking or
+                    overwhelming.</p>
+
+                <h3>Analogous Colors</h3>
+                <p>Colors adjacent on the wheel (blue, blue-green, green). These create harmonious, soothing palettes.
+                    Many pixel art palettes use analogous schemes within each "ramp" of colors.</p>
+
+                <h3>Triadic Colors</h3>
+                <p>Three colors equally spaced on the wheel. Creates vibrant, balanced palettes when one color dominates
+                    and the others accent.</p>
+
+                <h2>Color Temperature</h2>
+
+                <p>Colors are perceived as "warm" (red, orange, yellow) or "cool" (blue, green, purple). Temperature
+                    affects mood and depth perception:</p>
+
+                <ul>
+                    <li><strong>Warm colors</strong> advance—they appear closer to the viewer</li>
+                    <li><strong>Cool colors</strong> recede—they appear farther away</li>
+                    <li><strong>Warm lights</strong> typically have cool shadows, and vice versa</li>
+                </ul>
+
+                <p>In pixel art environments, backgrounds often lean cool while foreground elements lean warm, creating
+                    natural depth separation.</p>
+
+                <h2>Hue Shifting: The Secret to Vibrant Pixel Art</h2>
+
+                <p>Hue shifting is the technique of changing hue along with value when creating shading. Instead of just
+                    making colors darker for shadows, you shift toward a different hue (usually cooler). For highlights,
+                    you shift toward another hue (usually warmer).</p>
+
+                <h3>Example: Skin Tones</h3>
+                <ul>
+                    <li><strong>Highlight:</strong> Shift toward yellow/peach</li>
+                    <li><strong>Midtone:</strong> The base skin color</li>
+                    <li><strong>Shadow:</strong> Shift toward red/purple</li>
+                    <li><strong>Deep shadow:</strong> Shift toward blue/purple</li>
+                </ul>
+
+                <p>This creates vibrant, lively skin instead of muddy browns. Many established palettes like Endesga 32
+                    build in hue shifting—their color ramps naturally shift hue as they change value.</p>
+
+                <h2>Value Steps and Ramps</h2>
+
+                <p>A "ramp" is a series of colors progressing from dark to light. Most pixel art uses 3-5 colors per
+                    ramp. The number of steps affects the artwork's feel:</p>
+
+                <ul>
+                    <li><strong>2-3 colors:</strong> Bold, graphic, retro feel (GameBoy style)</li>
+                    <li><strong>4-5 colors:</strong> Balanced detail and readability (most games)</li>
+                    <li><strong>6+ colors:</strong> Smooth gradients, more realistic feel</li>
+                </ul>
+
+                <p>When creating ramps, space your values evenly. A common mistake is clustering values too close
+                    together in the midtones while having a sudden jump to highlights or shadows.</p>
+
+                <h2>Practical Application: Building a Palette</h2>
+
+                <h3>Step 1: Choose Your Base Hues</h3>
+                <p>Decide on the main colors for your sprite or scene. For a character, you might need skin, hair,
+                    clothing, and accent colors.</p>
+
+                <h3>Step 2: Create Ramps</h3>
+                <p>For each base hue, create a ramp of 3-4 values. Remember to hue shift—don't just adjust brightness.
+                </p>
+
+                <h3>Step 3: Add Utility Colors</h3>
+                <p>Include a pure black or near-black for outlines, a pure white for specular highlights, and neutral
+                    grays for metallic or stone elements.</p>
+
+                <h3>Step 4: Test Together</h3>
+                <p>Place all colors in a test image to see how they interact. Adjust until harmonious.</p>
+
+                <h2>Color in Palette Swapping</h2>
+
+                <p>When swapping palettes, these principles guide your decisions:</p>
+
+                <ul>
+                    <li><strong>Preserve value relationships:</strong> If the original used a 4-step ramp, your
+                        replacement should too</li>
+                    <li><strong>Match saturation levels:</strong> Replacing a muted color with a vibrant one may look
+                        out of place</li>
+                    <li><strong>Consider temperature shifts:</strong> Swapping a warm character to cool tones changes
+                        the mood entirely</li>
+                    <li><strong>Maintain hue shifting direction:</strong> If the original shifted toward purple in
+                        shadows, your replacement should shift similarly</li>
+                </ul>
+
+                <div class="related-guides">
+                    <h3>Related Guides</h3>
+                    <div class="related-grid">
+                        <a href="best-color-palettes-for-pixel-art.html" class="related-link">🎯 Best Color Palettes</a>
+                        <a href="common-palette-mistakes.html" class="related-link">⚠️ Common Palette Mistakes</a>
+                    </div>
+                </div>
+
+                <div class="cta-box">
+                    <h3>Apply Color Theory</h3>
+                    <p style="color: var(--color-text-muted);">Put these concepts into practice with palette swapping.
+                    </p>
+                    <a href="../index.html" class="btn">Open the Tool 🎨</a>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h4>PixelPaletteSwap</h4>
+                <ul class="footer-links">
+                    <li><a href="../index.html">Palette Swap Tool</a></li>
+                    <li><a href="../guides.html">Guides & Tutorials</a></li>
+                    <li><a href="../about.html">About Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul class="footer-links">
+                    <li><a href="../privacy.html">Privacy Policy</a></li>
+                    <li><a href="../contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2024 PixelPaletteSwap.com. Made with ❤️ for the pixel art community.</p>
+        </div>
+    </footer>
+</body>
+
+</html>
