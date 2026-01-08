@@ -5,14 +5,14 @@
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-KV231G62ZM"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
 
-      gtag('config', 'G-KV231G62ZM');
+        gtag('config', 'G-KV231G62ZM');
     </script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6945982381535038"
-     crossorigin="anonymous"></script>
+        crossorigin="anonymous"></script>
     <meta name="google-adsense-account" content="ca-pub-6945982381535038">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -141,17 +141,17 @@
         }
 
         .preview-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 300px;
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            margin: 0 auto;
             background: repeating-conic-gradient(#333 0% 25%, #444 0% 50%) 50% / 20px 20px;
             border-radius: 10px;
-            overflow: hidden;
+            overflow: auto;
+            position: relative;
         }
 
         #previewCanvas {
-            max-width: 100%;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
         }
@@ -608,6 +608,11 @@
         .canvas-wrapper {
             position: relative;
             display: inline-block;
+            min-width: 100%;
+            min-height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
@@ -666,7 +671,7 @@
                 </div>
                 <div class="zoom-controls">
                     <label>Zoom: <span id="zoomValue">4</span>x</label>
-                    <input type="range" id="zoomSlider" min="1" max="30" value="4">
+                    <input type="range" id="zoomSlider" min="1" max="50" value="4">
                 </div>
                 <div class="controls">
                     <button id="playPauseBtn">⏸️ Pause</button>
@@ -1312,6 +1317,81 @@
             speedValue.textContent = fps;
             // Update all frame delays for image sequences
             frameDelays = frameDelays.map(() => customFrameDelay);
+        });
+
+        // Ctrl+scroll zoom functionality
+        const previewContainer = document.querySelector('.preview-container');
+        previewContainer.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+
+                // Determine zoom direction
+                const delta = e.deltaY > 0 ? -1 : 1;
+                const oldZoom = zoom;
+                zoom = Math.max(1, Math.min(50, zoom + delta));
+
+                if (zoom !== oldZoom) {
+                    // Update slider and display
+                    zoomSlider.value = zoom;
+                    zoomValue.textContent = zoom;
+
+                    // Get scroll position ratios before zoom
+                    const scrollXRatio = previewContainer.scrollWidth > previewContainer.clientWidth
+                        ? previewContainer.scrollLeft / (previewContainer.scrollWidth - previewContainer.clientWidth)
+                        : 0.5;
+                    const scrollYRatio = previewContainer.scrollHeight > previewContainer.clientHeight
+                        ? previewContainer.scrollTop / (previewContainer.scrollHeight - previewContainer.clientHeight)
+                        : 0.5;
+
+                    updateCanvasSize();
+                    renderCurrentFrame();
+
+                    // Restore scroll position proportionally
+                    requestAnimationFrame(() => {
+                        if (previewContainer.scrollWidth > previewContainer.clientWidth) {
+                            previewContainer.scrollLeft = scrollXRatio * (previewContainer.scrollWidth - previewContainer.clientWidth);
+                        }
+                        if (previewContainer.scrollHeight > previewContainer.clientHeight) {
+                            previewContainer.scrollTop = scrollYRatio * (previewContainer.scrollHeight - previewContainer.clientHeight);
+                        }
+                    });
+                }
+            }
+        }, { passive: false });
+
+        // Ctrl+drag pan functionality
+        let isPanning = false;
+        let panStartX = 0;
+        let panStartY = 0;
+        let panScrollStartX = 0;
+        let panScrollStartY = 0;
+
+        previewContainer.addEventListener('mousedown', (e) => {
+            if (e.ctrlKey && e.button === 0) {
+                isPanning = true;
+                panStartX = e.clientX;
+                panStartY = e.clientY;
+                panScrollStartX = previewContainer.scrollLeft;
+                panScrollStartY = previewContainer.scrollTop;
+                previewContainer.style.cursor = 'grabbing';
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isPanning) {
+                const dx = e.clientX - panStartX;
+                const dy = e.clientY - panStartY;
+                previewContainer.scrollLeft = panScrollStartX - dx;
+                previewContainer.scrollTop = panScrollStartY - dy;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isPanning) {
+                isPanning = false;
+                previewContainer.style.cursor = '';
+            }
         });
 
         // Palette source event listeners
