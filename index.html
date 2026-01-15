@@ -664,6 +664,11 @@
                 </div>
                 <p style="text-align: center; font-size: 12px; color: #888; margin: 5px 0;">💡 Click on the image to
                     pick a color</p>
+                <div style="display: flex; align-items: center; gap: 10px; justify-content: center; margin: 10px 0;">
+                    <label style="font-size: 14px; color: #aaa;">📝 Project Name:</label>
+                    <input type="text" id="projectNameInput" placeholder="Enter project name" 
+                           style="padding: 6px 10px; border: 1px solid #555; border-radius: 4px; background: #1a1a2e; color: #fff; font-size: 14px; flex: 1; max-width: 300px;">
+                </div>
                 <div class="frame-info" id="frameInfo">Frame 1 / 1</div>
                 <div class="speed-controls"
                     style="display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 5px;">
@@ -942,6 +947,7 @@
         let zoom = 4;
         let colorSwapHistory = []; // Track all color swaps made
         let customFrameDelay = 100; // Default delay for image sequences (10 FPS)
+        let projectName = 'palette-swapped'; // Default project name for exports
 
         // Selection tool state
         let currentTool = 'none'; // 'none', 'rect', 'poly'
@@ -987,6 +993,7 @@
         const sourcePaletteGrid = document.getElementById('sourcePaletteGrid');
         const clearPaletteSourceBtn = document.getElementById('clearPaletteSourceBtn');
         const newColorHex = document.getElementById('newColorHex');
+        const projectNameInput = document.getElementById('projectNameInput');
 
         // Selection tool elements
         const selectionCanvas = document.getElementById('selectionCanvas');
@@ -997,6 +1004,11 @@
         const selectionInfo = document.getElementById('selectionInfo');
         const invertSelectionBtn = document.getElementById('invertSelectionBtn');
         const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+
+        // Project name sync
+        projectNameInput.addEventListener('input', (e) => {
+            projectName = e.target.value.trim() || 'palette-swapped';
+        });
 
         // Sync color picker and hex input
         newColorPicker.addEventListener('input', (e) => {
@@ -1576,6 +1588,11 @@
             files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
 
             const firstFile = files[0];
+            
+            // Set project name from first file name (remove extension)
+            const fileNameWithoutExt = firstFile.name.replace(/\.[^/.]+$/, '');
+            projectName = fileNameWithoutExt;
+            projectNameInput.value = fileNameWithoutExt;
 
             if (files.length === 1 && firstFile.type === 'image/gif') {
                 // Single GIF file
@@ -2300,7 +2317,8 @@
             const a = document.createElement('a');
             a.href = url;
             const frameNum = currentFrames.length > 1 ? `-frame${currentFrameIndex + 1}` : '';
-            a.download = `palette-swapped${frameNum}.png`;
+            const fileName = projectName || 'palette-swapped';
+            a.download = `${fileName}${frameNum}.png`;
             a.click();
         }
 
@@ -2322,7 +2340,8 @@
                     const url = tempCanvas.toDataURL('image/png');
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'palette-swapped.png';
+                    const fileName = projectName || 'palette-swapped';
+                    a.download = `${fileName}.png`;
                     a.click();
                 } else {
                     // Multiple frames - create a zip file using JSZip
@@ -2351,7 +2370,8 @@
                     const url = URL.createObjectURL(zipBlob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'palette-swapped-frames.zip';
+                    const fileName = projectName || 'palette-swapped';
+                    a.download = `${fileName}-frames.zip`;
                     a.click();
                     URL.revokeObjectURL(url);
                 }
