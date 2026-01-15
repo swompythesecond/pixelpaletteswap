@@ -1444,11 +1444,9 @@
             }
 
             const rect = previewCanvas.getBoundingClientRect();
-            const scaleX = previewCanvas.width / rect.width;
-            const scaleY = previewCanvas.height / rect.height;
-
-            const canvasX = Math.floor((e.clientX - rect.left) * scaleX);
-            const canvasY = Math.floor((e.clientY - rect.top) * scaleY);
+            // Convert mouse position to canvas coordinates
+            const canvasX = ((e.clientX - rect.left) / rect.width) * previewCanvas.width;
+            const canvasY = ((e.clientY - rect.top) / rect.height) * previewCanvas.height;
 
             // Convert to original image coordinates
             const imgX = Math.floor(canvasX / zoom);
@@ -1482,10 +1480,10 @@
             if (currentFrames.length === 0) return;
 
             const rect = previewCanvas.getBoundingClientRect();
-            const scaleX = previewCanvas.width / rect.width;
-            const scaleY = previewCanvas.height / rect.height;
-            const canvasX = Math.floor((e.clientX - rect.left) * scaleX);
-            const canvasY = Math.floor((e.clientY - rect.top) * scaleY);
+            // Convert mouse position to canvas coordinates
+            const canvasX = ((e.clientX - rect.left) / rect.width) * previewCanvas.width;
+            const canvasY = ((e.clientY - rect.top) / rect.height) * previewCanvas.height;
+            // Convert canvas coordinates to image pixel coordinates
             const imgX = Math.floor(canvasX / zoom);
             const imgY = Math.floor(canvasY / zoom);
 
@@ -1509,10 +1507,10 @@
             if (currentFrames.length === 0) return;
 
             const rect = previewCanvas.getBoundingClientRect();
-            const scaleX = previewCanvas.width / rect.width;
-            const scaleY = previewCanvas.height / rect.height;
-            const canvasX = Math.floor((e.clientX - rect.left) * scaleX);
-            const canvasY = Math.floor((e.clientY - rect.top) * scaleY);
+            // Convert mouse position to canvas coordinates
+            const canvasX = ((e.clientX - rect.left) / rect.width) * previewCanvas.width;
+            const canvasY = ((e.clientY - rect.top) / rect.height) * previewCanvas.height;
+            // Convert canvas coordinates to image pixel coordinates
             const imgX = Math.max(0, Math.min(gifWidth - 1, Math.floor(canvasX / zoom)));
             const imgY = Math.max(0, Math.min(gifHeight - 1, Math.floor(canvasY / zoom)));
 
