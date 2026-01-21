@@ -666,8 +666,8 @@
                     pick a color</p>
                 <div style="display: flex; align-items: center; gap: 10px; justify-content: center; margin: 10px 0;">
                     <label style="font-size: 14px; color: #aaa;">📝 Project Name:</label>
-                    <input type="text" id="projectNameInput" placeholder="Enter project name" 
-                           style="padding: 6px 10px; border: 1px solid #555; border-radius: 4px; background: #1a1a2e; color: #fff; font-size: 14px; flex: 1; max-width: 300px;">
+                    <input type="text" id="projectNameInput" placeholder="Enter project name"
+                        style="padding: 6px 10px; border: 1px solid #555; border-radius: 4px; background: #1a1a2e; color: #fff; font-size: 14px; flex: 1; max-width: 300px;">
                 </div>
                 <div class="frame-info" id="frameInfo">Frame 1 / 1</div>
                 <div class="speed-controls"
@@ -1586,7 +1586,7 @@
             files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
 
             const firstFile = files[0];
-            
+
             // Set project name from first file name (remove extension)
             const fileNameWithoutExt = firstFile.name.replace(/\.[^/.]+$/, '');
             projectName = fileNameWithoutExt;
@@ -2041,7 +2041,8 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'color-swap-preset.json';
+            const fileName = projectName || 'color-swap-preset';
+            a.download = `${fileName}-preset.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
