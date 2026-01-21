@@ -68,7 +68,7 @@ Since this is a static website, you can run it locally with any HTTP server:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/pixelpaletteswap.git
+git clone https://github.com/swompythesecond/pixelpaletteswap.git
 cd pixelpaletteswap
 
 # Using Python
