@@ -612,8 +612,30 @@ button:disabled {
     margin-bottom: 5px;
 }
 
-.grouping-threshold input[type="range"] {
-    width: 100%;
+.threshold-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.threshold-controls input[type="range"] {
+    flex: 1;
+}
+
+.threshold-controls input[type="number"] {
+    width: 55px;
+    padding: 4px 6px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+}
+
+.threshold-controls input[type="number"]:focus {
+    outline: none;
+    border-color: #e94560;
 }
 
 .threshold-hint {
@@ -666,7 +688,34 @@ button:disabled {
     border-color: #e94560;
 }
 
+.color-group-container .color-item.anchor-selected {
+    border-color: #fff;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+}
+
 /* Override palette grid for grouped mode */
 .palette-grid.grouped-mode {
     display: block;
+}
+
+/* Warning message for too many groups */
+.grouping-warning {
+    background: rgba(233, 69, 96, 0.2);
+    border: 1px solid #e94560;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #e94560;
+    text-align: center;
+}
+
+.grouping-warning small {
+    color: #aaa;
+}
+
+/* Anchor label styling */
+.color-picker-wrapper label.anchor-label {
+    color: #e94560;
+    font-weight: bold;
 }

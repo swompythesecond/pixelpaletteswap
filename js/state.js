@@ -32,5 +32,6 @@ export const state = {
     colorGroupingThreshold: 30,      // 0-100 scale, higher = more aggressive grouping
     colorGroups: [],                 // Array of arrays of colorKeys
     colorKeyToGroupIndex: new Map(), // colorKey -> group index lookup
-    selectedGroup: null              // Currently selected group index
+    selectedGroup: null,             // Currently selected group index
+    selectedAnchorColor: null        // The specific color clicked in a group (used as anchor for shift)
 };

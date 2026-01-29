@@ -15,6 +15,7 @@ export const elements = {
     exportPngBtn: document.getElementById('exportPngBtn'),
     originalColorEl: document.getElementById('originalColor'),
     originalColorHex: document.getElementById('originalColorHex'),
+    originalColorLabel: document.getElementById('originalColorLabel'),
     newColorPicker: document.getElementById('newColorPicker'),
     applySwapBtn: document.getElementById('applySwapBtn'),
     resetBtn: document.getElementById('resetBtn'),
@@ -48,7 +49,7 @@ export const elements = {
     groupingToggle: document.getElementById('groupingToggle'),
     groupingThresholdContainer: document.getElementById('groupingThresholdContainer'),
     groupingThreshold: document.getElementById('groupingThreshold'),
-    thresholdValue: document.getElementById('thresholdValue'),
+    thresholdInput: document.getElementById('thresholdInput'),
     colorCountLabel: document.getElementById('colorCountLabel'),
 
     // Contexts

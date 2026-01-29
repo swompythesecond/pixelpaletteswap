@@ -34,12 +34,25 @@ export function renderPalette() {
         // Compute groups and render in grouped mode
         computeColorGroups();
 
-        elements.colorCount.textContent = state.colorGroups.length;
+        const totalGroups = state.colorGroups.length;
+        const MAX_DISPLAYED_GROUPS = 200; // Limit for UI performance
+        const displayedGroups = Math.min(totalGroups, MAX_DISPLAYED_GROUPS);
+
+        elements.colorCount.textContent = totalGroups;
         elements.colorCountLabel.textContent = `groups (${state.colorPalette.size} colors)`;
         elements.paletteGrid.classList.add('grouped-mode');
 
-        // Render each group
-        state.colorGroups.forEach((groupKeys, groupIndex) => {
+        // Show warning if too many groups
+        if (totalGroups > MAX_DISPLAYED_GROUPS) {
+            const warning = document.createElement('div');
+            warning.className = 'grouping-warning';
+            warning.innerHTML = `Showing ${MAX_DISPLAYED_GROUPS} of ${totalGroups} groups. <br><small>Increase sensitivity to reduce groups.</small>`;
+            elements.paletteGrid.appendChild(warning);
+        }
+
+        // Render groups (limited for performance)
+        for (let groupIndex = 0; groupIndex < displayedGroups; groupIndex++) {
+            const groupKeys = state.colorGroups[groupIndex];
             const groupContainer = document.createElement('div');
             groupContainer.className = 'color-group-container';
             groupContainer.dataset.groupIndex = groupIndex;
@@ -56,16 +69,16 @@ export function renderPalette() {
                 const div = createColorElement(colorKey, colorData);
                 div.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    selectGroup(groupIndex);
+                    selectGroup(groupIndex, colorKey); // Pass the clicked color as anchor
                 });
                 groupContainer.appendChild(div);
             });
 
-            // Click handler for entire group container
-            groupContainer.addEventListener('click', () => selectGroup(groupIndex));
+            // Click handler for entire group container (uses middle color as default anchor)
+            groupContainer.addEventListener('click', () => selectGroup(groupIndex, null));
 
             elements.paletteGrid.appendChild(groupContainer);
-        });
+        }
     } else {
         // Original non-grouped behavior
         elements.colorCount.textContent = state.colorPalette.size;
@@ -106,11 +119,11 @@ function createColorElement(colorKey, colorData) {
 }
 
 export function selectColor(colorKey, element) {
-    // In grouping mode, clicking a color selects its group
+    // In grouping mode, clicking a color selects its group with that color as anchor
     if (state.colorGroupingEnabled) {
         const groupIndex = state.colorKeyToGroupIndex.get(colorKey);
         if (groupIndex !== undefined) {
-            selectGroup(groupIndex);
+            selectGroup(groupIndex, colorKey); // Pass clicked color as anchor
         }
         return;
     }
@@ -120,6 +133,7 @@ export function selectColor(colorKey, element) {
     element.classList.add('selected');
     state.selectedColor = colorKey;
     state.selectedGroup = null;
+    state.selectedAnchorColor = null;
 
     const [r, g, b] = colorKey.split(',').map(Number);
     elements.originalColorEl.style.background = `rgb(${r}, ${g}, ${b})`;
@@ -128,14 +142,19 @@ export function selectColor(colorKey, element) {
     elements.newColorPicker.value = hexColor;
     elements.newColorHex.value = hexColor.toUpperCase();
 
+    // Reset label to "Original" for single color mode
+    elements.originalColorLabel.textContent = 'Original';
+    elements.originalColorLabel.classList.remove('anchor-label');
+
     elements.applySwapBtn.disabled = false;
 }
 
-export function selectGroup(groupIndex) {
+export function selectGroup(groupIndex, anchorColorKey = null) {
     // Clear previous selections
     document.querySelectorAll('.color-group-container.selected').forEach(el => el.classList.remove('selected'));
     document.querySelectorAll('.color-item.group-selected').forEach(el => el.classList.remove('group-selected'));
     document.querySelectorAll('.color-item.selected').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('.color-item.anchor-selected').forEach(el => el.classList.remove('anchor-selected'));
 
     // Select new group
     const groupContainer = document.querySelector(`.color-group-container[data-group-index="${groupIndex}"]`);
@@ -147,17 +166,36 @@ export function selectGroup(groupIndex) {
     state.selectedGroup = groupIndex;
     state.selectedColor = null;
 
-    // Show the "representative" color (middle of gradient) in the original color display
+    // Determine anchor color: use clicked color or default to middle
     const groupKeys = state.colorGroups[groupIndex];
-    const middleIndex = Math.floor(groupKeys.length / 2);
-    const middleKey = groupKeys[middleIndex];
-    const [r, g, b] = middleKey.split(',').map(Number);
+    let anchorKey;
+    if (anchorColorKey && groupKeys.includes(anchorColorKey)) {
+        anchorKey = anchorColorKey;
+    } else {
+        // Default to middle color
+        const middleIndex = Math.floor(groupKeys.length / 2);
+        anchorKey = groupKeys[middleIndex];
+    }
 
+    state.selectedAnchorColor = anchorKey;
+
+    // Highlight the anchor color specifically
+    const anchorElement = groupContainer?.querySelector(`.color-item[data-color="${anchorKey}"]`);
+    if (anchorElement) {
+        anchorElement.classList.add('anchor-selected');
+    }
+
+    // Show the anchor color in the original color display
+    const [r, g, b] = anchorKey.split(',').map(Number);
     elements.originalColorEl.style.background = `rgb(${r}, ${g}, ${b})`;
     const hexColor = rgbToHex(r, g, b);
     elements.originalColorHex.value = hexColor.toUpperCase();
     elements.newColorPicker.value = hexColor;
     elements.newColorHex.value = hexColor.toUpperCase();
+
+    // Update label to show "Anchor"
+    elements.originalColorLabel.textContent = 'Anchor';
+    elements.originalColorLabel.classList.add('anchor-label');
 
     elements.applySwapBtn.disabled = false;
 }

@@ -177,8 +177,11 @@
                         <span>Group similar colors</span>
                     </div>
                     <div class="grouping-threshold hidden" id="groupingThresholdContainer">
-                        <label>Grouping sensitivity: <span id="thresholdValue">30</span></label>
-                        <input type="range" id="groupingThreshold" min="5" max="80" value="30">
+                        <label>Grouping sensitivity:</label>
+                        <div class="threshold-controls">
+                            <input type="range" id="groupingThreshold" min="1" max="100" value="30">
+                            <input type="number" id="thresholdInput" min="1" max="100" value="30">
+                        </div>
                         <p class="threshold-hint">Higher = fewer groups (more colors grouped together)</p>
                     </div>
                 </div>
@@ -194,7 +197,7 @@
                             <div class="swap-color" id="originalColor" style="background: #888;"></div>
                             <input type="text" id="originalColorHex" value="#888888" readonly
                                 style="width: 70px; padding: 6px 8px; border: 1px solid #555; border-radius: 4px; background: #0d0d1a; color: #aaa; font-family: monospace; text-transform: uppercase; cursor: default;">
-                            <label>Original</label>
+                            <label id="originalColorLabel">Original</label>
                         </div>
                         <span class="swap-arrow">➡️</span>
                         <div class="color-picker-wrapper">
@@ -287,6 +290,8 @@
                             specific areas only</li>
                         <li><strong>Color Picker</strong> - Click directly on the image to select colors</li>
                         <li><strong>Palette Import</strong> - Upload a second image to use its colors as swap targets
+                        </li>
+                        <li><strong>Color Grouping</strong> - Automatically group similar colors for easier swapping of gradients
                         </li>
                         <li><strong>Live Preview</strong> - See changes in real-time with animation playback</li>
                         <li><strong>Zoom Control</strong> - Pixel-perfect viewing at any scale</li>

@@ -28,6 +28,7 @@ PixelPaletteSwap is a browser-based tool for swapping colors in pixel art. Perfe
 - **GIF Support** - Load animated GIFs and edit all frames at once
 - **Image Sequences** - Upload multiple PNGs as animation frames
 - **Color Picker** - Click directly on the image to select colors
+- **Color Grouping** - Group colors to change gradient colors at once
 - **Selection Tools** - Rectangle or polygon selection to swap colors in specific areas
 - **Palette Import** - Upload a second image to use its colors as swap targets
 - **Live Preview** - See changes in real-time with animation playback

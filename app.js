@@ -127,22 +127,50 @@ elements.groupingToggle.addEventListener('change', (e) => {
     // Clear selections when toggling
     state.selectedColor = null;
     state.selectedGroup = null;
+    state.selectedAnchorColor = null;
     elements.applySwapBtn.disabled = true;
     elements.originalColorEl.style.background = '#888';
 
     renderPalette();
 });
 
-elements.groupingThreshold.addEventListener('input', (e) => {
-    state.colorGroupingThreshold = parseInt(e.target.value);
-    elements.thresholdValue.textContent = e.target.value;
+// Debounced threshold update for performance with large palettes
+let thresholdDebounceTimer = null;
 
-    // Clear selection and re-render
+function updateThreshold(value, source) {
+    const clamped = Math.max(1, Math.min(100, parseInt(value) || 30));
+    state.colorGroupingThreshold = clamped;
+
+    // Sync both inputs
+    if (source !== 'slider') elements.groupingThreshold.value = clamped;
+    if (source !== 'input') elements.thresholdInput.value = clamped;
+
+    // Clear selection
     state.selectedGroup = null;
+    state.selectedAnchorColor = null;
     elements.applySwapBtn.disabled = true;
     elements.originalColorEl.style.background = '#888';
 
-    renderPalette();
+    // Debounce the expensive re-render
+    clearTimeout(thresholdDebounceTimer);
+    thresholdDebounceTimer = setTimeout(() => {
+        renderPalette();
+    }, 150);
+}
+
+elements.groupingThreshold.addEventListener('input', (e) => {
+    updateThreshold(e.target.value, 'slider');
+});
+
+elements.thresholdInput.addEventListener('input', (e) => {
+    updateThreshold(e.target.value, 'input');
+});
+
+elements.thresholdInput.addEventListener('blur', (e) => {
+    // Ensure valid value on blur
+    const clamped = Math.max(1, Math.min(100, parseInt(e.target.value) || 30));
+    e.target.value = clamped;
+    elements.groupingThreshold.value = clamped;
 });
 
 // Ctrl+scroll zoom functionality
@@ -463,8 +491,11 @@ function applyGroupSwap() {
     renderCurrentFrame();
     updateSwapHistoryDisplay();
     state.selectedGroup = null;
+    state.selectedAnchorColor = null;
     elements.applySwapBtn.disabled = true;
     elements.originalColorEl.style.background = '#888';
+    elements.originalColorLabel.textContent = 'Original';
+    elements.originalColorLabel.classList.remove('anchor-label');
 }
 
 /**
@@ -482,9 +513,16 @@ function calculateGradientMapping(groupKeys, targetR, targetG, targetB) {
         return { key, r, g, b, lab };
     });
 
-    // Find the middle color (our "anchor" - the one displayed in the UI)
-    const middleIndex = Math.floor(originalColors.length / 2);
-    const anchorColor = originalColors[middleIndex];
+    // Find the anchor color (the one clicked/selected by the user)
+    let anchorColor;
+    if (state.selectedAnchorColor) {
+        anchorColor = originalColors.find(c => c.key === state.selectedAnchorColor);
+    }
+    // Fallback to middle color if anchor not found
+    if (!anchorColor) {
+        const middleIndex = Math.floor(originalColors.length / 2);
+        anchorColor = originalColors[middleIndex];
+    }
 
     // Calculate the shift in LAB space
     const targetLab = rgbToLab(targetR, targetG, targetB);
@@ -525,8 +563,11 @@ function resetChanges() {
     updateSelectionInfo();
     state.selectedColor = null;
     state.selectedGroup = null;
+    state.selectedAnchorColor = null;
     elements.applySwapBtn.disabled = true;
     elements.originalColorEl.style.background = '#888';
+    elements.originalColorLabel.textContent = 'Original';
+    elements.originalColorLabel.classList.remove('anchor-label');
 }
 
 function updateSwapHistoryDisplay() {
@@ -582,8 +623,11 @@ function undoSingleSwap(index) {
     updateSwapHistoryDisplay();
     state.selectedColor = null;
     state.selectedGroup = null;
+    state.selectedAnchorColor = null;
     elements.applySwapBtn.disabled = true;
     elements.originalColorEl.style.background = '#888';
+    elements.originalColorLabel.textContent = 'Original';
+    elements.originalColorLabel.classList.remove('anchor-label');
 }
 
 window.undoSingleSwap = undoSingleSwap;
