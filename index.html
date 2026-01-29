@@ -166,7 +166,23 @@
             </div>
 
             <div class="palette-section">
-                <h2>🎨 Color Palette (<span id="colorCount">0</span> colors)</h2>
+                <h2>🎨 Color Palette (<span id="colorCount">0</span> <span id="colorCountLabel">colors</span>)</h2>
+
+                <div class="grouping-settings">
+                    <div class="grouping-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="groupingToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span>Group similar colors</span>
+                    </div>
+                    <div class="grouping-threshold hidden" id="groupingThresholdContainer">
+                        <label>Grouping sensitivity: <span id="thresholdValue">30</span></label>
+                        <input type="range" id="groupingThreshold" min="5" max="80" value="30">
+                        <p class="threshold-hint">Higher = fewer groups (more colors grouped together)</p>
+                    </div>
+                </div>
+
                 <div class="palette-grid" id="paletteGrid"></div>
 
                 <div class="swap-section">

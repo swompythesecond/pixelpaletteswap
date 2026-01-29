@@ -25,5 +25,12 @@ export const state = {
     tempPolygonPoint: null,
 
     // Palette source state
-    sourcePaletteColors: new Map()
+    sourcePaletteColors: new Map(),
+
+    // Color grouping state
+    colorGroupingEnabled: false,
+    colorGroupingThreshold: 30,      // 0-100 scale, higher = more aggressive grouping
+    colorGroups: [],                 // Array of arrays of colorKeys
+    colorKeyToGroupIndex: new Map(), // colorKey -> group index lookup
+    selectedGroup: null              // Currently selected group index
 };

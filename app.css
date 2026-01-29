@@ -540,3 +540,133 @@ button:disabled {
 #selectionCanvas {
     display: block;
 }
+
+/* Color Grouping Styles */
+.grouping-settings {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.grouping-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 42px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #444;
+    transition: 0.3s;
+    border-radius: 22px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: #e94560;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+.grouping-threshold {
+    margin-top: 12px;
+    padding-left: 52px;
+}
+
+.grouping-threshold label {
+    font-size: 12px;
+    color: #aaa;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.grouping-threshold input[type="range"] {
+    width: 100%;
+}
+
+.threshold-hint {
+    font-size: 10px;
+    color: #666;
+    margin: 5px 0 0;
+}
+
+/* Color Group Container */
+.color-group-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+    cursor: pointer;
+}
+
+.color-group-container:hover {
+    border-color: rgba(233, 69, 96, 0.5);
+}
+
+.color-group-container.selected {
+    border-color: #fff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.group-label {
+    width: 100%;
+    font-size: 10px;
+    color: #888;
+    margin-bottom: 4px;
+}
+
+/* Color items within groups */
+.color-group-container .color-item {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    aspect-ratio: auto;
+    border-radius: 4px;
+    border-width: 2px;
+}
+
+.color-group-container .color-item.group-selected {
+    border-color: #e94560;
+}
+
+/* Override palette grid for grouped mode */
+.palette-grid.grouped-mode {
+    display: block;
+}

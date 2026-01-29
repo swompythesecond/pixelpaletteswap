@@ -44,6 +44,13 @@ export const elements = {
     invertSelectionBtn: document.getElementById('invertSelectionBtn'),
     clearSelectionBtn: document.getElementById('clearSelectionBtn'),
 
+    // Color grouping elements
+    groupingToggle: document.getElementById('groupingToggle'),
+    groupingThresholdContainer: document.getElementById('groupingThresholdContainer'),
+    groupingThreshold: document.getElementById('groupingThreshold'),
+    thresholdValue: document.getElementById('thresholdValue'),
+    colorCountLabel: document.getElementById('colorCountLabel'),
+
     // Contexts
     ctx: document.getElementById('previewCanvas').getContext('2d'),
     selectionCtx: document.getElementById('selectionCanvas').getContext('2d'),
