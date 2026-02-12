@@ -155,6 +155,9 @@
                         <button class="tool-btn" id="toolRect" title="Rectangle selection">⬜ Rectangle</button>
                         <button class="tool-btn" id="toolPoly"
                             title="Polygon selection - click to add points, double-click to close">🔷 Polygon</button>
+                        <button class="tool-btn" id="toolPencil"
+                            title="Draw 1x1 pixels using the selected color">✏️ Pencil</button>
+                        <button class="tool-btn" id="toolEraser" title="Erase 1x1 pixels to transparency">🩹 Eraser</button>
                     </div>
                     <div class="selection-info" id="selectionInfo">No selection - color swaps will apply to entire image
                     </div>
@@ -187,18 +190,26 @@
                 </div>
 
                 <div class="reduce-settings">
-                    <h3>Reduce Colors</h3>
+                    <div class="reduce-header">
+                        <h3>Reduce Colors</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="reduceToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
                     <p class="reduce-hint">Merge similar colors into a limited palette for cleaner pixel art.</p>
-                    <div class="reduce-presets">
-                        <button class="reduce-preset-btn" data-colors="8" type="button">8</button>
-                        <button class="reduce-preset-btn active" data-colors="16" type="button">16</button>
-                        <button class="reduce-preset-btn" data-colors="32" type="button">32</button>
+                    <div id="reduceControlsPanel" class="hidden">
+                        <div class="reduce-presets">
+                            <button class="reduce-preset-btn" data-colors="8" type="button">8</button>
+                            <button class="reduce-preset-btn active" data-colors="16" type="button">16</button>
+                            <button class="reduce-preset-btn" data-colors="32" type="button">32</button>
+                        </div>
+                        <div class="reduce-controls">
+                            <label for="reduceColorInput">Custom (2-256):</label>
+                            <input type="number" id="reduceColorInput" min="2" max="256" value="16">
+                        </div>
+                        <button id="applyReduceBtn" style="width: 100%; margin-top: 10px;" type="button">Apply Color Reduction</button>
                     </div>
-                    <div class="reduce-controls">
-                        <label for="reduceColorInput">Custom (2-256):</label>
-                        <input type="number" id="reduceColorInput" min="2" max="256" value="16">
-                    </div>
-                    <button id="applyReduceBtn" style="width: 100%; margin-top: 10px;" type="button">Apply Color Reduction</button>
                     <p id="reduceStatus" class="reduce-status"></p>
                 </div>
 
@@ -226,6 +237,10 @@
                     <button id="applySwapBtn" style="width: 100%;" disabled>Apply Color Swap</button>
                     <button id="resetBtn" style="width: 100%; margin-top: 10px; background: #555;">Reset All
                         Changes</button>
+                    <div class="history-actions">
+                        <button id="undoBtn" style="background: #555;" type="button">↶ Undo</button>
+                        <button id="redoBtn" style="background: #555;" type="button">↷ Redo</button>
+                    </div>
                 </div>
 
                 <div class="preset-section"

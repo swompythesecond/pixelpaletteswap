@@ -37,9 +37,14 @@ export async function loadImages(files, updateSwapHistoryDisplay) {
         state.frameDelays = [];
         state.colorSwapHistory = [];
         state.editHistory = [];
+        state.redoHistory = [];
         state.selectionMask = null;
         state.polygonPoints = [];
         state.tempPolygonPoint = null;
+        state.isPainting = false;
+        state.activePaintTool = null;
+        state.strokeSelectionSet = null;
+        state.strokePixelMap.clear();
 
         let maxWidth = 0;
         let maxHeight = 0;
@@ -99,9 +104,14 @@ export async function loadGif(file, updateSwapHistoryDisplay) {
     elements.mainContent.classList.add('hidden');
     state.colorSwapHistory = [];
     state.editHistory = [];
+    state.redoHistory = [];
     state.selectionMask = null;
     state.polygonPoints = [];
     state.tempPolygonPoint = null;
+    state.isPainting = false;
+    state.activePaintTool = null;
+    state.strokeSelectionSet = null;
+    state.strokePixelMap.clear();
 
     try {
         const arrayBuffer = await file.arrayBuffer();

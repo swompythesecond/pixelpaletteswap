@@ -481,8 +481,8 @@ button:disabled {
 }
 
 .tool-btn {
-    flex: 1;
-    min-width: 70px;
+    flex: 1 1 110px;
+    min-width: 110px;
     padding: 8px 12px;
     font-size: 12px;
     background: #333;
@@ -513,6 +513,18 @@ button:disabled {
 }
 
 .selection-actions button {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 11px;
+}
+
+.history-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.history-actions button {
     flex: 1;
     padding: 6px 10px;
     font-size: 11px;
@@ -655,6 +667,17 @@ button:disabled {
     margin: 0 0 6px;
     font-size: 14px;
     color: #aaa;
+}
+
+.reduce-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.reduce-header h3 {
+    margin: 0;
 }
 
 .reduce-hint {

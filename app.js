@@ -43,6 +43,16 @@ updateSwapHistoryDisplay();
 function initializeReduceControls() {
     elements.reduceColorInput.value = state.reduceColorTarget;
     setActiveReducePreset(state.reduceColorTarget);
+    elements.reduceToggle.checked = state.reduceEnabled;
+    elements.reduceControlsPanel.classList.toggle('hidden', !state.reduceEnabled);
+
+    elements.reduceToggle.addEventListener('change', (e) => {
+        state.reduceEnabled = e.target.checked;
+        elements.reduceControlsPanel.classList.toggle('hidden', !state.reduceEnabled);
+        if (!state.reduceEnabled) {
+            setReduceStatus('');
+        }
+    });
 
     elements.reducePresetButtons.forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -120,6 +130,132 @@ function getSelectionContext() {
     };
 }
 
+function getCanvasPixelFromEvent(e, clampToBounds = false) {
+    const rect = elements.previewCanvas.getBoundingClientRect();
+    const normalizedX = ((e.clientX - rect.left) / rect.width) * state.gifWidth;
+    const normalizedY = ((e.clientY - rect.top) / rect.height) * state.gifHeight;
+
+    let imgX = Math.floor(normalizedX);
+    let imgY = Math.floor(normalizedY);
+
+    if (clampToBounds) {
+        imgX = Math.max(0, Math.min(state.gifWidth - 1, imgX));
+        imgY = Math.max(0, Math.min(state.gifHeight - 1, imgY));
+    } else if (imgX < 0 || imgX >= state.gifWidth || imgY < 0 || imgY >= state.gifHeight) {
+        return null;
+    }
+
+    return {
+        x: imgX,
+        y: imgY,
+        pixelIndex: imgY * state.gifWidth + imgX
+    };
+}
+
+function getCurrentDrawColor() {
+    const hex = elements.newColorPicker.value;
+    return {
+        r: parseInt(hex.slice(1, 3), 16),
+        g: parseInt(hex.slice(3, 5), 16),
+        b: parseInt(hex.slice(5, 7), 16),
+        a: 255
+    };
+}
+
+function canEditPixel(pixelIndex) {
+    if (!state.strokeSelectionSet) return true;
+    return state.strokeSelectionSet.has(pixelIndex);
+}
+
+function applyPaintAtPixel(pixel) {
+    const frameData = state.currentFrames[state.currentFrameIndex];
+    const dataIndex = pixel.pixelIndex * 4;
+
+    if (!frameData || !canEditPixel(pixel.pixelIndex)) return false;
+
+    const from = {
+        r: frameData[dataIndex],
+        g: frameData[dataIndex + 1],
+        b: frameData[dataIndex + 2],
+        a: frameData[dataIndex + 3]
+    };
+
+    const paintTool = state.activePaintTool || state.currentTool;
+    const to = paintTool === 'eraser'
+        ? { r: 0, g: 0, b: 0, a: 0 }
+        : getCurrentDrawColor();
+
+    if (from.r === to.r && from.g === to.g && from.b === to.b && from.a === to.a) {
+        return false;
+    }
+
+    if (!state.strokePixelMap.has(pixel.pixelIndex)) {
+        state.strokePixelMap.set(pixel.pixelIndex, { from, to });
+    } else {
+        state.strokePixelMap.get(pixel.pixelIndex).to = to;
+    }
+
+    frameData[dataIndex] = to.r;
+    frameData[dataIndex + 1] = to.g;
+    frameData[dataIndex + 2] = to.b;
+    frameData[dataIndex + 3] = to.a;
+    return true;
+}
+
+function beginPaintStroke(pixel) {
+    stopAnimation();
+    state.isPainting = true;
+    state.activePaintTool = state.currentTool;
+    const selectionContext = getSelectionContext();
+    state.strokeSelectionSet = selectionContext.hasSelection ? selectionContext.selectedSet : null;
+    state.strokePixelMap.clear();
+
+    if (applyPaintAtPixel(pixel)) {
+        renderCurrentFrame();
+    }
+}
+
+function continuePaintStroke(pixel) {
+    if (!state.isPainting) return;
+    if (applyPaintAtPixel(pixel)) {
+        renderCurrentFrame();
+    }
+}
+
+function endPaintStroke() {
+    if (!state.isPainting) return;
+    state.isPainting = false;
+
+    if (state.strokePixelMap.size === 0) {
+        state.activePaintTool = null;
+        state.strokeSelectionSet = null;
+        return;
+    }
+
+    const paintTool = state.activePaintTool === 'eraser' ? 'eraser' : 'pencil';
+    const pixels = Array.from(state.strokePixelMap.entries()).map(([pixelIndex, change]) => ({
+        pixelIndex,
+        from: change.from,
+        to: change.to
+    }));
+
+    pushEditHistoryEntry({
+        type: 'paint',
+        tool: paintTool,
+        frameIndex: state.currentFrameIndex,
+        changedPixelCount: pixels.length,
+        pixels
+    });
+
+    state.activePaintTool = null;
+    state.strokeSelectionSet = null;
+    state.strokePixelMap.clear();
+    extractPalette();
+    renderCurrentFrame();
+    renderSelectionOverlay();
+    updateSwapHistoryDisplay();
+}
+
 function clearColorSelectionState() {
     state.selectedColor = null;
     state.selectedGroup = null;
@@ -176,6 +312,19 @@ function applyReductionEntryToFrames(reductionEntry) {
     }
 }
 
+function applyPaintEntryToFrames(paintEntry) {
+    const frameData = state.currentFrames[paintEntry.frameIndex];
+    if (!frameData) return;
+
+    for (const change of paintEntry.pixels) {
+        const dataIndex = change.pixelIndex * 4;
+        frameData[dataIndex] = change.to.r;
+        frameData[dataIndex + 1] = change.to.g;
+        frameData[dataIndex + 2] = change.to.b;
+        frameData[dataIndex + 3] = change.to.a;
+    }
+}
+
 function rebuildFramesFromHistory() {
     for (let i = 0; i < state.originalFrames.length; i++) {
         state.currentFrames[i] = new Uint8ClampedArray(state.originalFrames[i]);
@@ -189,8 +338,26 @@ function rebuildFramesFromHistory() {
             state.colorSwapHistory.push(entry.swap);
         } else if (entry.type === 'reduction') {
             applyReductionEntryToFrames(entry);
+        } else if (entry.type === 'paint') {
+            applyPaintEntryToFrames(entry);
         }
     }
+}
+
+function pushEditHistoryEntry(entry) {
+    state.editHistory.push(entry);
+    state.redoHistory = [];
+}
+
+function pushEditHistoryEntries(entries) {
+    if (entries.length === 0) return;
+    state.editHistory.push(...entries);
+    state.redoHistory = [];
+}
+
+function updateHistoryButtons() {
+    elements.undoBtn.disabled = state.editHistory.length === 0;
+    elements.redoBtn.disabled = state.redoHistory.length === 0;
 }
 
 // Event Listeners
@@ -230,6 +397,8 @@ elements.newColorHex.addEventListener('blur', (e) => {
 elements.toolNoneBtn.addEventListener('click', () => selectTool('none'));
 elements.toolRectBtn.addEventListener('click', () => selectTool('rect'));
 elements.toolPolyBtn.addEventListener('click', () => selectTool('poly'));
+elements.toolPencilBtn.addEventListener('click', () => selectTool('pencil'));
+elements.toolEraserBtn.addEventListener('click', () => selectTool('eraser'));
 elements.invertSelectionBtn.addEventListener('click', invertSelection);
 elements.clearSelectionBtn.addEventListener('click', clearSelection);
 
@@ -259,6 +428,8 @@ elements.exportBtn.addEventListener('click', exportCurrentFrame);
 elements.exportPngBtn.addEventListener('click', exportPngSequence);
 elements.applySwapBtn.addEventListener('click', applyColorSwap);
 elements.resetBtn.addEventListener('click', resetChanges);
+elements.undoBtn.addEventListener('click', undoLastEdit);
+elements.redoBtn.addEventListener('click', redoLastEdit);
 elements.exportPresetBtn.addEventListener('click', exportPreset);
 elements.importPresetBtn.addEventListener('click', () => elements.importPresetInput.click());
 elements.importPresetInput.addEventListener('change', (e) => {
@@ -394,6 +565,7 @@ document.addEventListener('mouseup', () => {
         isPanning = false;
         elements.previewContainer.style.cursor = '';
     }
+    endPaintStroke();
 });
 
 elements.paletteSourceUpload.addEventListener('click', () => elements.paletteSourceInput.click());
@@ -447,38 +619,39 @@ elements.previewCanvas.addEventListener('click', (e) => {
 
 elements.previewCanvas.addEventListener('mousedown', (e) => {
     if (state.currentFrames.length === 0) return;
+    if (e.button !== 0) return;
 
-    const rect = elements.previewCanvas.getBoundingClientRect();
-    const imgX = Math.floor(((e.clientX - rect.left) / rect.width) * state.gifWidth);
-    const imgY = Math.floor(((e.clientY - rect.top) / rect.height) * state.gifHeight);
-
-    if (imgX < 0 || imgX >= state.gifWidth || imgY < 0 || imgY >= state.gifHeight) return;
+    const pixel = getCanvasPixelFromEvent(e);
+    if (!pixel) return;
 
     if (state.currentTool === 'rect') {
         state.isDrawingSelection = true;
-        state.selectionStart = { x: imgX, y: imgY };
-        state.selectionEnd = { x: imgX, y: imgY };
+        state.selectionStart = { x: pixel.x, y: pixel.y };
+        state.selectionEnd = { x: pixel.x, y: pixel.y };
         renderSelectionOverlay();
     } else if (state.currentTool === 'poly') {
-        state.polygonPoints.push({ x: imgX, y: imgY });
+        state.polygonPoints.push({ x: pixel.x, y: pixel.y });
         state.tempPolygonPoint = null;
         renderSelectionOverlay();
         updateSelectionInfo();
+    } else if (state.currentTool === 'pencil' || state.currentTool === 'eraser') {
+        beginPaintStroke(pixel);
     }
 });
 
 elements.previewCanvas.addEventListener('mousemove', (e) => {
     if (state.currentFrames.length === 0) return;
 
-    const rect = elements.previewCanvas.getBoundingClientRect();
-    const imgX = Math.max(0, Math.min(state.gifWidth - 1, Math.floor(((e.clientX - rect.left) / rect.width) * state.gifWidth)));
-    const imgY = Math.max(0, Math.min(state.gifHeight - 1, Math.floor(((e.clientY - rect.top) / rect.height) * state.gifHeight)));
+    const pixel = getCanvasPixelFromEvent(e, true);
 
     if (state.currentTool === 'rect' && state.isDrawingSelection) {
-        state.selectionEnd = { x: imgX, y: imgY };
+        state.selectionEnd = { x: pixel.x, y: pixel.y };
         renderSelectionOverlay();
     } else if (state.currentTool === 'poly' && state.polygonPoints.length > 0) {
-        state.tempPolygonPoint = { x: imgX, y: imgY };
+        state.tempPolygonPoint = { x: pixel.x, y: pixel.y };
+        renderSelectionOverlay();
+    } else if ((state.currentTool === 'pencil' || state.currentTool === 'eraser') && state.isPainting) {
+        continuePaintStroke(pixel);
         renderSelectionOverlay();
     }
 });
@@ -488,6 +661,8 @@ elements.previewCanvas.addEventListener('mouseup', (e) => {
         state.isDrawingSelection = false;
         applyRectangleSelection(state.selectionStart.x, state.selectionStart.y, state.selectionEnd.x, state.selectionEnd.y);
         renderSelectionOverlay();
+    } else if (state.currentTool === 'pencil' || state.currentTool === 'eraser') {
+        endPaintStroke();
     }
 });
 
@@ -496,6 +671,8 @@ elements.previewCanvas.addEventListener('mouseleave', () => {
         state.isDrawingSelection = false;
         applyRectangleSelection(state.selectionStart.x, state.selectionStart.y, state.selectionEnd.x, state.selectionEnd.y);
         renderSelectionOverlay();
+    } else if (state.currentTool === 'pencil' || state.currentTool === 'eraser') {
+        endPaintStroke();
     }
 });
 
@@ -509,6 +686,51 @@ elements.previewCanvas.addEventListener('dblclick', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+    const tagName = e.target?.tagName || '';
+    const isTypingTarget = e.target?.isContentEditable || tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT';
+    const key = e.key.toLowerCase();
+    const hasCtrl = e.ctrlKey || e.metaKey;
+
+    if (hasCtrl && !isTypingTarget) {
+        if (key === 'z') {
+            e.preventDefault();
+            if (e.shiftKey) {
+                redoLastEdit();
+            } else {
+                undoLastEdit();
+            }
+            return;
+        }
+        if (key === 'y') {
+            e.preventDefault();
+            redoLastEdit();
+            return;
+        }
+    }
+
+    if (!hasCtrl && !isTypingTarget) {
+        if (key === 'd') {
+            selectTool('pencil');
+            return;
+        }
+        if (key === 'o') {
+            selectTool('none');
+            return;
+        }
+        if (key === 'e') {
+            selectTool('eraser');
+            return;
+        }
+        if (key === 's') {
+            selectTool('rect');
+            return;
+        }
+        if (key === 'p') {
+            selectTool('poly');
+            return;
+        }
+    }
+
     if (e.key === 'Enter' && state.currentTool === 'poly' && state.polygonPoints.length >= 3) {
         applyPolygonSelection(state.polygonPoints);
         state.polygonPoints = [];
@@ -523,6 +745,8 @@ document.addEventListener('keydown', (e) => {
         } else if (state.isDrawingSelection) {
             state.isDrawingSelection = false;
             renderSelectionOverlay();
+        } else if (state.isPainting) {
+            endPaintStroke();
         }
     }
 });
@@ -558,7 +782,7 @@ function applyColorSwap() {
     }
 
     state.colorSwapHistory.push(swapEntry);
-    state.editHistory.push({ type: 'swap', swap: swapEntry });
+    pushEditHistoryEntry({ type: 'swap', swap: swapEntry });
     applySwapEntryToFrames(swapEntry);
 
     extractPalette();
@@ -584,6 +808,8 @@ function applyGroupSwap() {
     const selectionContext = getSelectionContext();
     let hasChanges = false;
 
+    const swapHistoryEntries = [];
+
     // Record each individual color swap in history (for undo compatibility)
     for (const [oldKey, newColor] of colorMappings) {
         const [oldR, oldG, oldB] = oldKey.split(',').map(Number);
@@ -602,13 +828,15 @@ function applyGroupSwap() {
         }
 
         state.colorSwapHistory.push(swapEntry);
-        state.editHistory.push({ type: 'swap', swap: swapEntry });
+        swapHistoryEntries.push({ type: 'swap', swap: swapEntry });
         hasChanges = true;
     }
 
     if (!hasChanges) {
         return;
     }
+
+    pushEditHistoryEntries(swapHistoryEntries);
 
     // Apply the mappings to all frames
     for (const frameData of state.currentFrames) {
@@ -685,6 +913,11 @@ function calculateGradientMapping(groupKeys, targetR, targetG, targetB) {
 }
 
 function applyColorReduction(targetValue) {
+    if (!state.reduceEnabled) {
+        setReduceStatus('Enable Reduce Colors to apply color reduction.', 'neutral');
+        return;
+    }
+
     if (state.currentFrames.length === 0) {
         setReduceStatus('Load an image before reducing colors.', 'error');
         return;
@@ -780,7 +1013,7 @@ function applyColorReduction(targetValue) {
         reductionEntry.selectedIndices = selectionContext.selectedIndices;
     }
 
-    state.editHistory.push(reductionEntry);
+    pushEditHistoryEntry(reductionEntry);
 
     extractPalette();
     renderCurrentFrame();
@@ -798,9 +1031,14 @@ function resetChanges() {
     }
     state.colorSwapHistory = [];
     state.editHistory = [];
+    state.redoHistory = [];
     state.selectionMask = null;
     state.polygonPoints = [];
     state.tempPolygonPoint = null;
+    state.isPainting = false;
+    state.activePaintTool = null;
+    state.strokeSelectionSet = null;
+    state.strokePixelMap.clear();
     extractPalette();
     renderCurrentFrame();
     renderSelectionOverlay();
@@ -813,6 +1051,7 @@ function resetChanges() {
 function updateSwapHistoryDisplay() {
     if (state.editHistory.length === 0) {
         elements.swapHistoryEl.innerHTML = '<em>No edits yet</em>';
+        updateHistoryButtons();
         return;
     }
 
@@ -826,6 +1065,16 @@ function updateSwapHistoryDisplay() {
             </div>`;
         }
 
+        if (entry.type === 'paint') {
+            const icon = entry.tool === 'eraser' ? 'E' : 'P';
+            const label = entry.tool === 'eraser' ? 'Eraser stroke' : 'Pencil stroke';
+            return `<div style="display: flex; align-items: center; gap: 5px; margin: 3px 0;">
+                <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #6bc5ff;">${icon}</span>
+                <span style="color: #666; flex: 1;">${label} (${entry.changedPixelCount} px) - Frame ${entry.frameIndex + 1}</span>
+                <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this stroke">x</button>
+            </div>`;
+        }
+
         const swap = entry.swap;
         return `<div style="display: flex; align-items: center; gap: 5px; margin: 3px 0;">
             <span style="width: 14px; height: 14px; background: ${swap.from.hex}; border: 1px solid #555; border-radius: 2px;"></span>
@@ -835,15 +1084,50 @@ function updateSwapHistoryDisplay() {
             <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this swap">x</button>
         </div>`;
     }).join('');
+    updateHistoryButtons();
 }
-function undoSingleSwap(index) {
-    if (index < 0 || index >= state.editHistory.length) return;
+function undoLastEdit() {
+    if (state.isPainting) {
+        endPaintStroke();
+    }
 
-    state.editHistory.splice(index, 1);
+    if (state.editHistory.length === 0) return;
+
+    const entry = state.editHistory.pop();
+    state.redoHistory.push(entry);
     rebuildFramesFromHistory();
 
     extractPalette();
     renderCurrentFrame();
+    renderSelectionOverlay();
+    updateSwapHistoryDisplay();
+    clearColorSelectionState();
+}
+
+function redoLastEdit() {
+    if (state.redoHistory.length === 0) return;
+
+    const entry = state.redoHistory.pop();
+    state.editHistory.push(entry);
+    rebuildFramesFromHistory();
+
+    extractPalette();
+    renderCurrentFrame();
+    renderSelectionOverlay();
+    updateSwapHistoryDisplay();
+    clearColorSelectionState();
+}
+
+function undoSingleSwap(index) {
+    if (index < 0 || index >= state.editHistory.length) return;
+
+    state.editHistory.splice(index, 1);
+    state.redoHistory = [];
+    rebuildFramesFromHistory();
+
+    extractPalette();
+    renderCurrentFrame();
+    renderSelectionOverlay();
     updateSwapHistoryDisplay();
     clearColorSelectionState();
 }

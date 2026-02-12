@@ -13,7 +13,19 @@ export function selectTool(tool) {
     } else if (tool === 'poly') {
         elements.toolPolyBtn.classList.add('active');
         elements.previewCanvas.style.cursor = 'crosshair';
+    } else if (tool === 'pencil') {
+        elements.toolPencilBtn.classList.add('active');
+        elements.previewCanvas.style.cursor = 'crosshair';
+    } else if (tool === 'eraser') {
+        elements.toolEraserBtn.classList.add('active');
+        elements.previewCanvas.style.cursor = 'crosshair';
     }
+
+    state.isPainting = false;
+    state.activePaintTool = null;
+    state.strokeSelectionSet = null;
+    state.strokePixelMap.clear();
+
     // Reset polygon points when switching tools
     if (tool !== 'poly') {
         state.polygonPoints = [];
@@ -35,6 +47,10 @@ export function updateSelectionInfo() {
             elements.selectionInfo.textContent = 'Click and drag to create a rectangle selection';
         } else if (state.currentTool === 'poly') {
             elements.selectionInfo.textContent = 'Click to add points, double-click or press Enter to close polygon';
+        } else if (state.currentTool === 'pencil') {
+            elements.selectionInfo.textContent = 'Click and drag to draw 1x1 pixels with the selected color';
+        } else if (state.currentTool === 'eraser') {
+            elements.selectionInfo.textContent = 'Click and drag to erase 1x1 pixels to transparency';
         }
     } else {
         const selectedCount = state.selectionMask.filter(v => v === 1).length;
