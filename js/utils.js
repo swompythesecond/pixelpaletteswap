@@ -119,3 +119,154 @@ export function colorDistanceLab(r1, g1, b1, r2, g2, b2) {
         Math.pow(lab1.b - lab2.b, 2)
     );
 }
+
+function labDistanceSq(c1, c2) {
+    const dL = c1.L - c2.L;
+    const dA = c1.a - c2.a;
+    const dB = c1.b - c2.b;
+    return dL * dL + dA * dA + dB * dB;
+}
+
+export function buildColorMapToCentroids(colors, centroidLabs) {
+    const colorMap = new Map();
+    const centroidRgb = centroidLabs.map(c => labToRgb(c.L, c.a, c.b));
+
+    for (const color of colors) {
+        let bestIndex = 0;
+        let bestDist = Infinity;
+
+        for (let i = 0; i < centroidLabs.length; i++) {
+            const dist = labDistanceSq(color.lab, centroidLabs[i]);
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestIndex = i;
+            }
+        }
+
+        colorMap.set(color.key, centroidRgb[bestIndex]);
+    }
+
+    return colorMap;
+}
+
+export function quantizeColorsLabWeighted(colorCounts, targetCount, maxIterations = 20) {
+    const colors = [...colorCounts.entries()].map(([key, data]) => ({
+        key,
+        r: data.r,
+        g: data.g,
+        b: data.b,
+        count: data.count,
+        lab: rgbToLab(data.r, data.g, data.b)
+    }));
+
+    if (colors.length === 0) {
+        return new Map();
+    }
+
+    const clampedTarget = Math.max(1, Math.min(targetCount, colors.length));
+    if (clampedTarget >= colors.length) {
+        const identityMap = new Map();
+        for (const color of colors) {
+            identityMap.set(color.key, { r: color.r, g: color.g, b: color.b });
+        }
+        return identityMap;
+    }
+
+    // Deterministic seeding: highest-frequency color first, then farthest-point by weighted LAB distance.
+    const sortedByCount = [...colors].sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.key.localeCompare(b.key);
+    });
+
+    const centroids = [{ ...sortedByCount[0].lab }];
+    const chosen = new Set([sortedByCount[0].key]);
+
+    while (centroids.length < clampedTarget) {
+        let bestColor = null;
+        let bestScore = -1;
+
+        for (const color of colors) {
+            if (chosen.has(color.key)) continue;
+
+            let minDist = Infinity;
+            for (const centroid of centroids) {
+                const dist = labDistanceSq(color.lab, centroid);
+                if (dist < minDist) minDist = dist;
+            }
+
+            const score = minDist * color.count;
+            if (score > bestScore) {
+                bestScore = score;
+                bestColor = color;
+            }
+        }
+
+        if (!bestColor) break;
+
+        centroids.push({ ...bestColor.lab });
+        chosen.add(bestColor.key);
+    }
+
+    const assignments = new Array(colors.length).fill(-1);
+
+    for (let iter = 0; iter < maxIterations; iter++) {
+        const sums = centroids.map(() => ({ L: 0, a: 0, b: 0, w: 0 }));
+        let changed = false;
+
+        for (let i = 0; i < colors.length; i++) {
+            const color = colors[i];
+            let bestIndex = 0;
+            let bestDist = Infinity;
+
+            for (let j = 0; j < centroids.length; j++) {
+                const dist = labDistanceSq(color.lab, centroids[j]);
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    bestIndex = j;
+                }
+            }
+
+            if (assignments[i] !== bestIndex) {
+                assignments[i] = bestIndex;
+                changed = true;
+            }
+
+            const weight = color.count;
+            sums[bestIndex].L += color.lab.L * weight;
+            sums[bestIndex].a += color.lab.a * weight;
+            sums[bestIndex].b += color.lab.b * weight;
+            sums[bestIndex].w += weight;
+        }
+
+        for (let j = 0; j < centroids.length; j++) {
+            if (sums[j].w > 0) {
+                centroids[j] = {
+                    L: sums[j].L / sums[j].w,
+                    a: sums[j].a / sums[j].w,
+                    b: sums[j].b / sums[j].w
+                };
+                continue;
+            }
+
+            // Empty cluster fallback: pull centroid to the current highest-error color.
+            let worstColor = colors[0];
+            let worstScore = -1;
+
+            for (let i = 0; i < colors.length; i++) {
+                const assigned = assignments[i];
+                const dist = labDistanceSq(colors[i].lab, centroids[assigned]);
+                const score = dist * colors[i].count;
+                if (score > worstScore) {
+                    worstScore = score;
+                    worstColor = colors[i];
+                }
+            }
+
+            centroids[j] = { ...worstColor.lab };
+        }
+
+        if (!changed) break;
+    }
+
+    return buildColorMapToCentroids(colors, centroids);
+}

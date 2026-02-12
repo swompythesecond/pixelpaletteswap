@@ -119,6 +119,7 @@ export async function importPreset(e, updateSwapHistoryDisplay) {
             state.currentFrames[i] = new Uint8ClampedArray(state.originalFrames[i]);
         }
         state.colorSwapHistory = [];
+        state.editHistory = [];
 
         let appliedCount = 0;
         let skippedCount = 0;
@@ -153,6 +154,7 @@ export async function importPreset(e, updateSwapHistoryDisplay) {
                     }
                 }
                 state.colorSwapHistory.push(swap);
+                state.editHistory.push({ type: 'swap', swap });
                 appliedCount++;
             } else {
                 skippedCount++;

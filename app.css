@@ -644,6 +644,84 @@ button:disabled {
     margin: 5px 0 0;
 }
 
+/* Color Reduction Styles */
+.reduce-settings {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.reduce-settings h3 {
+    margin: 0 0 6px;
+    font-size: 14px;
+    color: #aaa;
+}
+
+.reduce-hint {
+    margin: 0 0 10px;
+    font-size: 11px;
+    color: #777;
+    line-height: 1.4;
+}
+
+.reduce-presets {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.reduce-preset-btn {
+    flex: 1;
+    padding: 7px 0;
+    font-size: 12px;
+    background: #333;
+    border: 1px solid #555;
+}
+
+.reduce-preset-btn:hover {
+    background: #444;
+}
+
+.reduce-preset-btn.active {
+    background: rgba(233, 69, 96, 0.25);
+    border-color: #e94560;
+}
+
+.reduce-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.reduce-controls label {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.reduce-controls input[type="number"] {
+    width: 80px;
+    padding: 5px 8px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+}
+
+.reduce-controls input[type="number"]:focus {
+    outline: none;
+    border-color: #e94560;
+}
+
+.reduce-status {
+    margin: 8px 0 0;
+    min-height: 16px;
+    font-size: 11px;
+    color: #888;
+}
+
 /* Color Group Container */
 .color-group-container {
     display: flex;

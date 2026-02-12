@@ -12,8 +12,12 @@ export const state = {
     colorPalette: new Map(),
     zoom: 4,
     colorSwapHistory: [], // Track all color swaps made
+    editHistory: [],      // Track all edit operations (swaps + reductions) for undo UI
     customFrameDelay: 100, // Default delay for image sequences (10 FPS)
     projectName: 'palette-swapped', // Default project name for exports
+    reduceColorTarget: 16,
+    reduceColorMin: 2,
+    reduceColorMax: 256,
 
     // Selection tool state
     currentTool: 'none', // 'none', 'rect', 'poly'

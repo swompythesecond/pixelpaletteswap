@@ -36,6 +36,7 @@ export async function loadImages(files, updateSwapHistoryDisplay) {
         state.currentFrames = [];
         state.frameDelays = [];
         state.colorSwapHistory = [];
+        state.editHistory = [];
         state.selectionMask = null;
         state.polygonPoints = [];
         state.tempPolygonPoint = null;
@@ -97,6 +98,7 @@ export async function loadGif(file, updateSwapHistoryDisplay) {
     elements.loading.classList.remove('hidden');
     elements.mainContent.classList.add('hidden');
     state.colorSwapHistory = [];
+    state.editHistory = [];
     state.selectionMask = null;
     state.polygonPoints = [];
     state.tempPolygonPoint = null;

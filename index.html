@@ -186,6 +186,22 @@
                     </div>
                 </div>
 
+                <div class="reduce-settings">
+                    <h3>Reduce Colors</h3>
+                    <p class="reduce-hint">Merge similar colors into a limited palette for cleaner pixel art.</p>
+                    <div class="reduce-presets">
+                        <button class="reduce-preset-btn" data-colors="8" type="button">8</button>
+                        <button class="reduce-preset-btn active" data-colors="16" type="button">16</button>
+                        <button class="reduce-preset-btn" data-colors="32" type="button">32</button>
+                    </div>
+                    <div class="reduce-controls">
+                        <label for="reduceColorInput">Custom (2-256):</label>
+                        <input type="number" id="reduceColorInput" min="2" max="256" value="16">
+                    </div>
+                    <button id="applyReduceBtn" style="width: 100%; margin-top: 10px;" type="button">Apply Color Reduction</button>
+                    <p id="reduceStatus" class="reduce-status"></p>
+                </div>
+
                 <div class="palette-grid" id="paletteGrid"></div>
 
                 <div class="swap-section">
@@ -293,6 +309,7 @@
                         </li>
                         <li><strong>Color Grouping</strong> - Automatically group similar colors for easier swapping of gradients
                         </li>
+                        <li><strong>Color Reduction</strong> - Quantize artwork to 8, 16, 32, or custom color counts</li>
                         <li><strong>Live Preview</strong> - See changes in real-time with animation playback</li>
                         <li><strong>Zoom Control</strong> - Pixel-perfect viewing at any scale</li>
                         <li><strong>Save Presets</strong> - Export color mappings to reuse on other sprites</li>

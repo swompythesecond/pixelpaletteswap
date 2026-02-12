@@ -51,6 +51,10 @@ export const elements = {
     groupingThreshold: document.getElementById('groupingThreshold'),
     thresholdInput: document.getElementById('thresholdInput'),
     colorCountLabel: document.getElementById('colorCountLabel'),
+    reducePresetButtons: document.querySelectorAll('.reduce-preset-btn'),
+    reduceColorInput: document.getElementById('reduceColorInput'),
+    applyReduceBtn: document.getElementById('applyReduceBtn'),
+    reduceStatus: document.getElementById('reduceStatus'),
 
     // Contexts
     ctx: document.getElementById('previewCanvas').getContext('2d'),

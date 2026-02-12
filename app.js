@@ -1,6 +1,6 @@
 import { state } from './js/state.js';
 import { elements } from './js/dom.js';
-import { rgbToHex, rgbToLab, labToRgb } from './js/utils.js';
+import { rgbToHex, rgbToLab, labToRgb, quantizeColorsLabWeighted } from './js/utils.js';
 import { 
     selectTool, 
     updateSelectionInfo, 
@@ -36,6 +36,162 @@ import {
 
 // Initialization
 startMarchingAnts();
+initializeReduceControls();
+setReduceStatus('');
+updateSwapHistoryDisplay();
+
+function initializeReduceControls() {
+    elements.reduceColorInput.value = state.reduceColorTarget;
+    setActiveReducePreset(state.reduceColorTarget);
+
+    elements.reducePresetButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const target = clampReduceTarget(btn.dataset.colors);
+            state.reduceColorTarget = target;
+            elements.reduceColorInput.value = target;
+            setActiveReducePreset(target);
+            setReduceStatus('');
+        });
+    });
+
+    elements.reduceColorInput.addEventListener('input', (e) => {
+        const parsed = parseInt(e.target.value, 10);
+        if (!Number.isNaN(parsed)) {
+            state.reduceColorTarget = clampReduceTarget(parsed);
+            setActiveReducePreset(state.reduceColorTarget);
+        }
+    });
+
+    elements.reduceColorInput.addEventListener('blur', (e) => {
+        const clamped = clampReduceTarget(e.target.value);
+        state.reduceColorTarget = clamped;
+        e.target.value = clamped;
+        setActiveReducePreset(clamped);
+    });
+
+    elements.applyReduceBtn.addEventListener('click', () => {
+        applyColorReduction(state.reduceColorTarget);
+    });
+}
+
+function clampReduceTarget(value) {
+    const parsed = parseInt(value, 10);
+    if (Number.isNaN(parsed)) return state.reduceColorTarget;
+    return Math.max(state.reduceColorMin, Math.min(state.reduceColorMax, parsed));
+}
+
+function setActiveReducePreset(target) {
+    elements.reducePresetButtons.forEach((btn) => {
+        const buttonTarget = parseInt(btn.dataset.colors, 10);
+        btn.classList.toggle('active', buttonTarget === target);
+    });
+}
+
+function setReduceStatus(message, tone = 'neutral') {
+    elements.reduceStatus.textContent = message;
+
+    if (tone === 'error') {
+        elements.reduceStatus.style.color = '#ff6b6b';
+    } else if (tone === 'success') {
+        elements.reduceStatus.style.color = '#4caf50';
+    } else {
+        elements.reduceStatus.style.color = '#888';
+    }
+}
+
+function getSelectionContext() {
+    if (!state.selectionMask) {
+        return { hasSelection: false, selectedIndices: [], selectedSet: null };
+    }
+
+    const selectedIndices = [];
+    for (let i = 0; i < state.selectionMask.length; i++) {
+        if (state.selectionMask[i] === 1) selectedIndices.push(i);
+    }
+
+    if (selectedIndices.length === 0) {
+        return { hasSelection: false, selectedIndices: [], selectedSet: null };
+    }
+
+    return {
+        hasSelection: true,
+        selectedIndices,
+        selectedSet: new Set(selectedIndices)
+    };
+}
+
+function clearColorSelectionState() {
+    state.selectedColor = null;
+    state.selectedGroup = null;
+    state.selectedAnchorColor = null;
+    elements.applySwapBtn.disabled = true;
+    elements.originalColorEl.style.background = '#888';
+    elements.originalColorLabel.textContent = 'Original';
+    elements.originalColorLabel.classList.remove('anchor-label');
+}
+
+function applySwapEntryToFrames(swapEntry) {
+    const oldR = swapEntry.from.r;
+    const oldG = swapEntry.from.g;
+    const oldB = swapEntry.from.b;
+    const newR = swapEntry.to.r;
+    const newG = swapEntry.to.g;
+    const newB = swapEntry.to.b;
+    const selectedSet = swapEntry.hasSelection && swapEntry.selectedIndices
+        ? new Set(swapEntry.selectedIndices)
+        : null;
+
+    for (const frameData of state.currentFrames) {
+        for (let i = 0; i < frameData.length; i += 4) {
+            const pixelIndex = i / 4;
+            if (selectedSet && !selectedSet.has(pixelIndex)) continue;
+            if (frameData[i] === oldR && frameData[i + 1] === oldG && frameData[i + 2] === oldB) {
+                frameData[i] = newR;
+                frameData[i + 1] = newG;
+                frameData[i + 2] = newB;
+            }
+        }
+    }
+}
+
+function applyReductionEntryToFrames(reductionEntry) {
+    const selectedSet = reductionEntry.hasSelection && reductionEntry.selectedIndices
+        ? new Set(reductionEntry.selectedIndices)
+        : null;
+
+    for (const frameData of state.currentFrames) {
+        for (let i = 0; i < frameData.length; i += 4) {
+            const pixelIndex = i / 4;
+            if (selectedSet && !selectedSet.has(pixelIndex)) continue;
+            if (frameData[i + 3] === 0) continue;
+
+            const colorKey = `${frameData[i]},${frameData[i + 1]},${frameData[i + 2]}`;
+            const mappedColor = reductionEntry.colorMap[colorKey];
+            if (!mappedColor) continue;
+
+            frameData[i] = mappedColor.r;
+            frameData[i + 1] = mappedColor.g;
+            frameData[i + 2] = mappedColor.b;
+        }
+    }
+}
+
+function rebuildFramesFromHistory() {
+    for (let i = 0; i < state.originalFrames.length; i++) {
+        state.currentFrames[i] = new Uint8ClampedArray(state.originalFrames[i]);
+    }
+
+    state.colorSwapHistory = [];
+
+    for (const entry of state.editHistory) {
+        if (entry.type === 'swap') {
+            applySwapEntryToFrames(entry.swap);
+            state.colorSwapHistory.push(entry.swap);
+        } else if (entry.type === 'reduction') {
+            applyReductionEntryToFrames(entry);
+        }
+    }
+}
 
 // Event Listeners
 elements.projectNameInput.addEventListener('input', (e) => {
@@ -88,9 +244,11 @@ elements.uploadArea.addEventListener('dragleave', () => {
 elements.uploadArea.addEventListener('drop', (e) => {
     e.preventDefault();
     elements.uploadArea.style.borderColor = '#e94560';
+    setReduceStatus('');
     handleFiles(Array.from(e.dataTransfer.files), updateSwapHistoryDisplay);
 });
 elements.fileInput.addEventListener('change', (e) => {
+    setReduceStatus('');
     handleFiles(Array.from(e.target.files), updateSwapHistoryDisplay);
 });
 
@@ -103,7 +261,10 @@ elements.applySwapBtn.addEventListener('click', applyColorSwap);
 elements.resetBtn.addEventListener('click', resetChanges);
 elements.exportPresetBtn.addEventListener('click', exportPreset);
 elements.importPresetBtn.addEventListener('click', () => elements.importPresetInput.click());
-elements.importPresetInput.addEventListener('change', (e) => importPreset(e, updateSwapHistoryDisplay));
+elements.importPresetInput.addEventListener('change', (e) => {
+    setReduceStatus('');
+    importPreset(e, updateSwapHistoryDisplay);
+});
 
 elements.zoomSlider.addEventListener('input', (e) => {
     state.zoom = parseInt(e.target.value);
@@ -125,11 +286,7 @@ elements.groupingToggle.addEventListener('change', (e) => {
     elements.groupingThresholdContainer.classList.toggle('hidden', !e.target.checked);
 
     // Clear selections when toggling
-    state.selectedColor = null;
-    state.selectedGroup = null;
-    state.selectedAnchorColor = null;
-    elements.applySwapBtn.disabled = true;
-    elements.originalColorEl.style.background = '#888';
+    clearColorSelectionState();
 
     renderPalette();
 });
@@ -146,10 +303,7 @@ function updateThreshold(value, source) {
     if (source !== 'input') elements.thresholdInput.value = clamped;
 
     // Clear selection
-    state.selectedGroup = null;
-    state.selectedAnchorColor = null;
-    elements.applySwapBtn.disabled = true;
-    elements.originalColorEl.style.background = '#888';
+    clearColorSelectionState();
 
     // Debounce the expensive re-render
     clearTimeout(thresholdDebounceTimer);
@@ -391,42 +545,26 @@ function applyColorSwap() {
 
     if (oldR === newR && oldG === newG && oldB === newB) return;
 
-    const hasSelection = state.selectionMask && state.selectionMask.some(v => v === 1);
+    const selectionContext = getSelectionContext();
     const oldHex = rgbToHex(oldR, oldG, oldB);
     const swapEntry = {
         from: { r: oldR, g: oldG, b: oldB, hex: oldHex },
         to: { r: newR, g: newG, b: newB, hex: newHex },
-        hasSelection: hasSelection
+        hasSelection: selectionContext.hasSelection
     };
 
-    if (hasSelection) {
-        const selectedIndices = [];
-        for (let i = 0; i < state.selectionMask.length; i++) {
-            if (state.selectionMask[i] === 1) selectedIndices.push(i);
-        }
-        swapEntry.selectedIndices = selectedIndices;
+    if (selectionContext.hasSelection) {
+        swapEntry.selectedIndices = selectionContext.selectedIndices;
     }
 
     state.colorSwapHistory.push(swapEntry);
-
-    for (const frameData of state.currentFrames) {
-        for (let i = 0; i < frameData.length; i += 4) {
-            const pixelIndex = i / 4;
-            if (hasSelection && state.selectionMask[pixelIndex] === 0) continue;
-            if (frameData[i] === oldR && frameData[i + 1] === oldG && frameData[i + 2] === oldB) {
-                frameData[i] = newR;
-                frameData[i + 1] = newG;
-                frameData[i + 2] = newB;
-            }
-        }
-    }
+    state.editHistory.push({ type: 'swap', swap: swapEntry });
+    applySwapEntryToFrames(swapEntry);
 
     extractPalette();
     renderCurrentFrame();
     updateSwapHistoryDisplay();
-    state.selectedColor = null;
-    elements.applySwapBtn.disabled = true;
-    elements.originalColorEl.style.background = '#888';
+    clearColorSelectionState();
 }
 
 function applyGroupSwap() {
@@ -443,8 +581,8 @@ function applyGroupSwap() {
 
     // Calculate the color mapping for each color in the group
     const colorMappings = calculateGradientMapping(groupKeys, targetR, targetG, targetB);
-
-    const hasSelection = state.selectionMask && state.selectionMask.some(v => v === 1);
+    const selectionContext = getSelectionContext();
+    let hasChanges = false;
 
     // Record each individual color swap in history (for undo compatibility)
     for (const [oldKey, newColor] of colorMappings) {
@@ -456,25 +594,28 @@ function applyGroupSwap() {
         const swapEntry = {
             from: { r: oldR, g: oldG, b: oldB, hex: rgbToHex(oldR, oldG, oldB) },
             to: { r: newColor.r, g: newColor.g, b: newColor.b, hex: rgbToHex(newColor.r, newColor.g, newColor.b) },
-            hasSelection: hasSelection
+            hasSelection: selectionContext.hasSelection
         };
 
-        if (hasSelection) {
-            const selectedIndices = [];
-            for (let i = 0; i < state.selectionMask.length; i++) {
-                if (state.selectionMask[i] === 1) selectedIndices.push(i);
-            }
-            swapEntry.selectedIndices = selectedIndices;
+        if (selectionContext.hasSelection) {
+            swapEntry.selectedIndices = selectionContext.selectedIndices;
         }
 
         state.colorSwapHistory.push(swapEntry);
+        state.editHistory.push({ type: 'swap', swap: swapEntry });
+        hasChanges = true;
+    }
+
+    if (!hasChanges) {
+        return;
     }
 
     // Apply the mappings to all frames
     for (const frameData of state.currentFrames) {
         for (let i = 0; i < frameData.length; i += 4) {
             const pixelIndex = i / 4;
-            if (hasSelection && state.selectionMask[pixelIndex] === 0) continue;
+            if (selectionContext.hasSelection && !selectionContext.selectedSet.has(pixelIndex)) continue;
+            if (frameData[i + 3] === 0) continue;
 
             const colorKey = `${frameData[i]},${frameData[i + 1]},${frameData[i + 2]}`;
             const mapping = colorMappings.get(colorKey);
@@ -490,12 +631,7 @@ function applyGroupSwap() {
     extractPalette();
     renderCurrentFrame();
     updateSwapHistoryDisplay();
-    state.selectedGroup = null;
-    state.selectedAnchorColor = null;
-    elements.applySwapBtn.disabled = true;
-    elements.originalColorEl.style.background = '#888';
-    elements.originalColorLabel.textContent = 'Original';
-    elements.originalColorLabel.classList.remove('anchor-label');
+    clearColorSelectionState();
 }
 
 /**
@@ -548,11 +684,120 @@ function calculateGradientMapping(groupKeys, targetR, targetG, targetB) {
     return mappings;
 }
 
+function applyColorReduction(targetValue) {
+    if (state.currentFrames.length === 0) {
+        setReduceStatus('Load an image before reducing colors.', 'error');
+        return;
+    }
+
+    const targetCount = clampReduceTarget(targetValue);
+    state.reduceColorTarget = targetCount;
+    elements.reduceColorInput.value = targetCount;
+    setActiveReducePreset(targetCount);
+
+    const selectionContext = getSelectionContext();
+    const scopedColorCounts = new Map();
+
+    for (const frameData of state.currentFrames) {
+        for (let i = 0; i < frameData.length; i += 4) {
+            const pixelIndex = i / 4;
+            if (selectionContext.hasSelection && !selectionContext.selectedSet.has(pixelIndex)) continue;
+
+            const a = frameData[i + 3];
+            if (a === 0) continue;
+
+            const r = frameData[i];
+            const g = frameData[i + 1];
+            const b = frameData[i + 2];
+            const colorKey = `${r},${g},${b}`;
+
+            if (!scopedColorCounts.has(colorKey)) {
+                scopedColorCounts.set(colorKey, { r, g, b, count: 1 });
+            } else {
+                scopedColorCounts.get(colorKey).count++;
+            }
+        }
+    }
+
+    const fromColorCount = scopedColorCounts.size;
+    if (fromColorCount === 0) {
+        setReduceStatus('No opaque pixels found in the current scope.', 'error');
+        return;
+    }
+
+    if (targetCount >= fromColorCount) {
+        setReduceStatus(`No reduction needed: scope already has ${fromColorCount} colors.`, 'neutral');
+        return;
+    }
+
+    const reductionMap = quantizeColorsLabWeighted(scopedColorCounts, targetCount);
+    const colorMap = {};
+    let changedPixels = 0;
+    let affectedPixelCount = 0;
+
+    for (const [key, value] of reductionMap.entries()) {
+        colorMap[key] = { r: value.r, g: value.g, b: value.b };
+    }
+
+    for (const frameData of state.currentFrames) {
+        for (let i = 0; i < frameData.length; i += 4) {
+            const pixelIndex = i / 4;
+            if (selectionContext.hasSelection && !selectionContext.selectedSet.has(pixelIndex)) continue;
+            if (frameData[i + 3] === 0) continue;
+
+            affectedPixelCount++;
+            const colorKey = `${frameData[i]},${frameData[i + 1]},${frameData[i + 2]}`;
+            const mappedColor = colorMap[colorKey];
+            if (!mappedColor) continue;
+
+            if (mappedColor.r !== frameData[i] || mappedColor.g !== frameData[i + 1] || mappedColor.b !== frameData[i + 2]) {
+                frameData[i] = mappedColor.r;
+                frameData[i + 1] = mappedColor.g;
+                frameData[i + 2] = mappedColor.b;
+                changedPixels++;
+            }
+        }
+    }
+
+    if (changedPixels === 0) {
+        setReduceStatus('Reduction produced no visible pixel changes.', 'neutral');
+        return;
+    }
+
+    const uniqueReducedColors = new Set(Object.values(colorMap).map((c) => `${c.r},${c.g},${c.b}`));
+    const reductionEntry = {
+        type: 'reduction',
+        targetCount,
+        hasSelection: selectionContext.hasSelection,
+        colorMap,
+        fromColorCount,
+        toColorCount: uniqueReducedColors.size,
+        affectedPixelCount,
+        changedPixelCount: changedPixels
+    };
+
+    if (selectionContext.hasSelection) {
+        reductionEntry.selectedIndices = selectionContext.selectedIndices;
+    }
+
+    state.editHistory.push(reductionEntry);
+
+    extractPalette();
+    renderCurrentFrame();
+    updateSwapHistoryDisplay();
+    clearColorSelectionState();
+    setReduceStatus(
+        `Reduced ${fromColorCount} -> ${reductionEntry.toColorCount} colors (${changedPixels} pixels changed).`,
+        'success'
+    );
+}
+
 function resetChanges() {
     for (let i = 0; i < state.originalFrames.length; i++) {
         state.currentFrames[i] = new Uint8ClampedArray(state.originalFrames[i]);
     }
     state.colorSwapHistory = [];
+    state.editHistory = [];
     state.selectionMask = null;
     state.polygonPoints = [];
     state.tempPolygonPoint = null;
@@ -561,73 +806,47 @@ function resetChanges() {
     renderSelectionOverlay();
     updateSwapHistoryDisplay();
     updateSelectionInfo();
-    state.selectedColor = null;
-    state.selectedGroup = null;
-    state.selectedAnchorColor = null;
-    elements.applySwapBtn.disabled = true;
-    elements.originalColorEl.style.background = '#888';
-    elements.originalColorLabel.textContent = 'Original';
-    elements.originalColorLabel.classList.remove('anchor-label');
+    clearColorSelectionState();
+    setReduceStatus('');
 }
 
 function updateSwapHistoryDisplay() {
-    if (state.colorSwapHistory.length === 0) {
-        elements.swapHistoryEl.innerHTML = '<em>No swaps yet</em>';
+    if (state.editHistory.length === 0) {
+        elements.swapHistoryEl.innerHTML = '<em>No edits yet</em>';
         return;
     }
 
-    elements.swapHistoryEl.innerHTML = state.colorSwapHistory.map((swap, i) =>
-        `<div style="display: flex; align-items: center; gap: 5px; margin: 3px 0;">
-            <span style="width: 14px; height: 14px; background: ${swap.from.hex}; border: 1px solid #555; border-radius: 2px;"></span>
-            →
-            <span style="width: 14px; height: 14px; background: ${swap.to.hex}; border: 1px solid #555; border-radius: 2px;"></span>
-            <span style="color: #666; flex: 1;">${swap.from.hex} → ${swap.to.hex}</span>
-            <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this swap">✕</button>
-        </div>`
-    ).join('');
-}
-
-function undoSingleSwap(index) {
-    if (index < 0 || index >= state.colorSwapHistory.length) return;
-
-    state.colorSwapHistory.splice(index, 1);
-
-    for (let i = 0; i < state.originalFrames.length; i++) {
-        state.currentFrames[i] = new Uint8ClampedArray(state.originalFrames[i]);
-    }
-
-    for (const swap of state.colorSwapHistory) {
-        const oldR = swap.from.r;
-        const oldG = swap.from.g;
-        const oldB = swap.from.b;
-        const newR = swap.to.r;
-        const newG = swap.to.g;
-        const newB = swap.to.b;
-
-        const selectedSet = swap.selectedIndices ? new Set(swap.selectedIndices) : null;
-
-        for (const frameData of state.currentFrames) {
-            for (let i = 0; i < frameData.length; i += 4) {
-                if (selectedSet && !selectedSet.has(i / 4)) continue;
-                if (frameData[i] === oldR && frameData[i + 1] === oldG && frameData[i + 2] === oldB) {
-                    frameData[i] = newR;
-                    frameData[i + 1] = newG;
-                    frameData[i + 2] = newB;
-                }
-            }
+    elements.swapHistoryEl.innerHTML = state.editHistory.map((entry, i) => {
+        if (entry.type === 'reduction') {
+            const scopeText = entry.hasSelection ? 'selection' : 'full image';
+            return `<div style="display: flex; align-items: center; gap: 5px; margin: 3px 0;">
+                <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #4caf50;">Q</span>
+                <span style="color: #666; flex: 1;">Reduce to ${entry.targetCount} colors (${scopeText})</span>
+                <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this reduction">x</button>
+            </div>`;
         }
-    }
+
+        const swap = entry.swap;
+        return `<div style="display: flex; align-items: center; gap: 5px; margin: 3px 0;">
+            <span style="width: 14px; height: 14px; background: ${swap.from.hex}; border: 1px solid #555; border-radius: 2px;"></span>
+            <span style="color: #666;">-></span>
+            <span style="width: 14px; height: 14px; background: ${swap.to.hex}; border: 1px solid #555; border-radius: 2px;"></span>
+            <span style="color: #666; flex: 1;">${swap.from.hex} -> ${swap.to.hex}</span>
+            <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this swap">x</button>
+        </div>`;
+    }).join('');
+}
+function undoSingleSwap(index) {
+    if (index < 0 || index >= state.editHistory.length) return;
+
+    state.editHistory.splice(index, 1);
+    rebuildFramesFromHistory();
 
     extractPalette();
     renderCurrentFrame();
     updateSwapHistoryDisplay();
-    state.selectedColor = null;
-    state.selectedGroup = null;
-    state.selectedAnchorColor = null;
-    elements.applySwapBtn.disabled = true;
-    elements.originalColorEl.style.background = '#888';
-    elements.originalColorLabel.textContent = 'Original';
-    elements.originalColorLabel.classList.remove('anchor-label');
+    clearColorSelectionState();
 }
-
 window.undoSingleSwap = undoSingleSwap;
+
+

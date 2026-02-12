@@ -29,6 +29,7 @@ PixelPaletteSwap is a browser-based tool for swapping colors in pixel art. Perfe
 - **Image Sequences** - Upload multiple PNGs as animation frames
 - **Color Picker** - Click directly on the image to select colors
 - **Color Grouping** - Group colors to change gradient colors at once
+- **Color Reduction** - Reduce artwork to 8, 16, 32, or custom palette sizes
 - **Selection Tools** - Rectangle or polygon selection to swap colors in specific areas
 - **Palette Import** - Upload a second image to use its colors as swap targets
 - **Live Preview** - See changes in real-time with animation playback
