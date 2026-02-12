@@ -5,6 +5,8 @@ export const state = {
     frameDelays: [],
     gifWidth: 0,
     gifHeight: 0,
+    originalWidth: 0,
+    originalHeight: 0,
     currentFrameIndex: 0,
     isPlaying: true,
     animationInterval: null,
@@ -20,6 +22,16 @@ export const state = {
     reduceColorTarget: 16,
     reduceColorMin: 2,
     reduceColorMax: 256,
+    resizePercent: 100,
+    resizeMinPercent: 1,
+    resizeMaxPercent: 1600,
+    resizeMaxDimension: 4096,
+    resizeMode: 'percent', // 'percent' | 'pixels'
+    resizeWidth: 1,
+    resizeHeight: 1,
+    transparencyThreshold: 100, // Min opacity threshold in percent (0-100)
+    transparencyThresholdMin: 0,
+    transparencyThresholdMax: 100,
 
     // Selection tool state
     currentTool: 'none', // 'none', 'rect', 'poly', 'pencil', 'eraser'

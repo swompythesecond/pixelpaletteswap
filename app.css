@@ -518,6 +518,49 @@ button:disabled {
     font-size: 11px;
 }
 
+.transparency-cleanup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.transparency-cleanup label {
+    font-size: 11px;
+    color: #888;
+}
+
+.transparency-cleanup input[type="number"] {
+    width: 64px;
+    padding: 5px 6px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 11px;
+    text-align: center;
+}
+
+.transparency-cleanup input[type="number"]:focus {
+    outline: none;
+    border-color: #6bc5ff;
+}
+
+.transparency-cleanup button {
+    flex: 1;
+    min-width: 180px;
+    padding: 6px 10px;
+    font-size: 11px;
+}
+
+.transparency-status {
+    margin: 6px 0 0;
+    min-height: 16px;
+    font-size: 11px;
+    color: #888;
+}
+
 .history-actions {
     display: flex;
     gap: 8px;
@@ -739,6 +782,111 @@ button:disabled {
 }
 
 .reduce-status {
+    margin: 8px 0 0;
+    min-height: 16px;
+    font-size: 11px;
+    color: #888;
+}
+
+/* Resize Styles */
+.resize-settings {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.resize-settings h3 {
+    margin: 0 0 6px;
+    font-size: 14px;
+    color: #aaa;
+}
+
+.resize-hint {
+    margin: 0 0 10px;
+    font-size: 11px;
+    color: #777;
+    line-height: 1.4;
+}
+
+.resize-mode-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.resize-mode-btn {
+    flex: 1;
+    padding: 7px 10px;
+    font-size: 12px;
+    background: #333;
+    border: 1px solid #555;
+}
+
+.resize-mode-btn:hover {
+    background: #444;
+}
+
+.resize-mode-btn.active {
+    background: rgba(107, 197, 255, 0.25);
+    border-color: #6bc5ff;
+}
+
+.resize-presets {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.resize-preset-btn {
+    flex: 1;
+    padding: 7px 0;
+    font-size: 12px;
+    background: #333;
+    border: 1px solid #555;
+}
+
+.resize-preset-btn:hover {
+    background: #444;
+}
+
+.resize-preset-btn.active {
+    background: rgba(107, 197, 255, 0.25);
+    border-color: #6bc5ff;
+}
+
+.resize-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.resize-controls label {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.resize-controls input[type="number"] {
+    width: 80px;
+    padding: 5px 8px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+}
+
+.resize-controls input[type="number"]:focus {
+    outline: none;
+    border-color: #6bc5ff;
+}
+
+.resize-pixels-row {
+    margin-top: 8px;
+}
+
+.resize-status {
     margin: 8px 0 0;
     min-height: 16px;
     font-size: 11px;

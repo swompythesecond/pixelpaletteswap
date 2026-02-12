@@ -165,6 +165,12 @@
                         <button id="invertSelectionBtn" style="background: #555;" disabled>🔄 Invert</button>
                         <button id="clearSelectionBtn" style="background: #555;" disabled>✕ Clear Selection</button>
                     </div>
+                    <div class="transparency-cleanup">
+                        <label for="transparencyThresholdInput">Min opacity (%):</label>
+                        <input type="number" id="transparencyThresholdInput" min="0" max="100" value="100">
+                        <button id="deleteTransparentBtn" style="background: #555;">🧹 Delete Transparent Pixels</button>
+                    </div>
+                    <p id="transparencyStatus" class="transparency-status"></p>
                 </div>
             </div>
 
@@ -280,6 +286,43 @@
                             style="width: 100%; margin-top: 10px; padding: 6px 12px; font-size: 11px; background: #555;">✕
                             Clear Palette Source</button>
                     </div>
+                </div>
+
+                <div class="resize-settings">
+                    <h3>Resize Image</h3>
+                    <p class="resize-hint">Scale the whole image/animation with nearest-neighbor pixel resizing.</p>
+
+                    <div class="resize-mode-toggle">
+                        <button class="resize-mode-btn active" id="resizeModePercentBtn" type="button">Percent (%)</button>
+                        <button class="resize-mode-btn" id="resizeModePixelsBtn" type="button">Pixels (px)</button>
+                    </div>
+
+                    <div id="resizePercentPanel">
+                        <div class="resize-presets">
+                            <button class="resize-preset-btn" data-percent="50" type="button">50%</button>
+                            <button class="resize-preset-btn active" data-percent="100" type="button">100%</button>
+                            <button class="resize-preset-btn" data-percent="200" type="button">200%</button>
+                            <button class="resize-preset-btn" data-percent="300" type="button">300%</button>
+                        </div>
+                        <div class="resize-controls">
+                            <label for="resizePercentInput">Custom (1-1600)%:</label>
+                            <input type="number" id="resizePercentInput" min="1" max="1600" value="100">
+                        </div>
+                    </div>
+
+                    <div id="resizePixelsPanel" class="hidden">
+                        <div class="resize-controls">
+                            <label for="resizeWidthInput">Width (px):</label>
+                            <input type="number" id="resizeWidthInput" min="1" max="4096" value="1">
+                        </div>
+                        <div class="resize-controls resize-pixels-row">
+                            <label for="resizeHeightInput">Height (px):</label>
+                            <input type="number" id="resizeHeightInput" min="1" max="4096" value="1">
+                        </div>
+                    </div>
+
+                    <button id="applyResizeBtn" style="width: 100%; margin-top: 10px;" type="button">Apply Resize</button>
+                    <p id="resizeStatus" class="resize-status"></p>
                 </div>
             </div>
         </div>

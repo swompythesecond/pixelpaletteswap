@@ -1,6 +1,6 @@
 import { state } from './js/state.js';
 import { elements } from './js/dom.js';
-import { rgbToHex, rgbToLab, labToRgb, quantizeColorsLabWeighted } from './js/utils.js';
+import { rgbToHex, rgbToLab, labToRgb, quantizeColorsLabWeighted, resizeFramesNearestNeighbor } from './js/utils.js';
 import { 
     selectTool, 
     updateSelectionInfo, 
@@ -37,7 +37,11 @@ import {
 // Initialization
 startMarchingAnts();
 initializeReduceControls();
+initializeResizeControls();
+initializeTransparencyControls();
 setReduceStatus('');
+setResizeStatus('');
+setTransparencyStatus('');
 updateSwapHistoryDisplay();
 
 function initializeReduceControls() {
@@ -106,6 +110,169 @@ function setReduceStatus(message, tone = 'neutral') {
         elements.reduceStatus.style.color = '#4caf50';
     } else {
         elements.reduceStatus.style.color = '#888';
+    }
+}
+
+function initializeResizeControls() {
+    elements.resizePercentInput.value = state.resizePercent;
+    elements.resizeWidthInput.value = state.resizeWidth;
+    elements.resizeHeightInput.value = state.resizeHeight;
+    setActiveResizePreset(state.resizePercent);
+    setResizeMode(state.resizeMode);
+
+    elements.resizeModePercentBtn.addEventListener('click', () => {
+        setResizeMode('percent');
+        setResizeStatus('');
+    });
+
+    elements.resizeModePixelsBtn.addEventListener('click', () => {
+        setResizeMode('pixels');
+        setResizeStatus('');
+    });
+
+    elements.resizePresetButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const target = clampResizePercent(btn.dataset.percent);
+            state.resizePercent = target;
+            elements.resizePercentInput.value = target;
+            setActiveResizePreset(target);
+            setResizeMode('percent');
+            setResizeStatus('');
+        });
+    });
+
+    elements.resizePercentInput.addEventListener('input', (e) => {
+        const parsed = parseInt(e.target.value, 10);
+        if (!Number.isNaN(parsed)) {
+            state.resizePercent = clampResizePercent(parsed);
+            setActiveResizePreset(state.resizePercent);
+        }
+    });
+
+    elements.resizePercentInput.addEventListener('blur', (e) => {
+        const clamped = clampResizePercent(e.target.value);
+        state.resizePercent = clamped;
+        e.target.value = clamped;
+        setActiveResizePreset(clamped);
+    });
+
+    elements.resizeWidthInput.addEventListener('input', (e) => {
+        const parsed = parseInt(e.target.value, 10);
+        if (!Number.isNaN(parsed)) {
+            state.resizeWidth = clampResizeDimension(parsed, state.resizeWidth);
+        }
+    });
+
+    elements.resizeHeightInput.addEventListener('input', (e) => {
+        const parsed = parseInt(e.target.value, 10);
+        if (!Number.isNaN(parsed)) {
+            state.resizeHeight = clampResizeDimension(parsed, state.resizeHeight);
+        }
+    });
+
+    elements.resizeWidthInput.addEventListener('blur', (e) => {
+        const clamped = clampResizeDimension(e.target.value, state.gifWidth || state.resizeWidth);
+        state.resizeWidth = clamped;
+        e.target.value = clamped;
+    });
+
+    elements.resizeHeightInput.addEventListener('blur', (e) => {
+        const clamped = clampResizeDimension(e.target.value, state.gifHeight || state.resizeHeight);
+        state.resizeHeight = clamped;
+        e.target.value = clamped;
+    });
+
+    elements.applyResizeBtn.addEventListener('click', () => {
+        applyImageResize();
+    });
+
+    syncResizeInputsFromCurrentSize();
+}
+
+function clampResizePercent(value) {
+    const parsed = parseInt(value, 10);
+    if (Number.isNaN(parsed)) return state.resizePercent;
+    return Math.max(state.resizeMinPercent, Math.min(state.resizeMaxPercent, parsed));
+}
+
+function clampResizeDimension(value, fallback) {
+    const parsed = parseInt(value, 10);
+    if (Number.isNaN(parsed)) return fallback;
+    return Math.max(1, Math.min(state.resizeMaxDimension, parsed));
+}
+
+function setResizeMode(mode) {
+    state.resizeMode = mode === 'pixels' ? 'pixels' : 'percent';
+    const isPixelsMode = state.resizeMode === 'pixels';
+    elements.resizeModePercentBtn.classList.toggle('active', !isPixelsMode);
+    elements.resizeModePixelsBtn.classList.toggle('active', isPixelsMode);
+    elements.resizePercentPanel.classList.toggle('hidden', isPixelsMode);
+    elements.resizePixelsPanel.classList.toggle('hidden', !isPixelsMode);
+}
+
+function setActiveResizePreset(target) {
+    elements.resizePresetButtons.forEach((btn) => {
+        const buttonTarget = parseInt(btn.dataset.percent, 10);
+        btn.classList.toggle('active', buttonTarget === target);
+    });
+}
+
+function syncResizeInputsFromCurrentSize() {
+    if (state.currentFrames.length === 0) return;
+    state.resizeWidth = state.gifWidth;
+    state.resizeHeight = state.gifHeight;
+    elements.resizeWidthInput.value = state.resizeWidth;
+    elements.resizeHeightInput.value = state.resizeHeight;
+}
+
+function setResizeStatus(message, tone = 'neutral') {
+    elements.resizeStatus.textContent = message;
+
+    if (tone === 'error') {
+        elements.resizeStatus.style.color = '#ff6b6b';
+    } else if (tone === 'success') {
+        elements.resizeStatus.style.color = '#6bc5ff';
+    } else {
+        elements.resizeStatus.style.color = '#888';
+    }
+}
+
+function initializeTransparencyControls() {
+    elements.transparencyThresholdInput.value = state.transparencyThreshold;
+
+    elements.transparencyThresholdInput.addEventListener('input', (e) => {
+        const parsed = parseInt(e.target.value, 10);
+        if (!Number.isNaN(parsed)) {
+            state.transparencyThreshold = clampTransparencyThreshold(parsed);
+        }
+    });
+
+    elements.transparencyThresholdInput.addEventListener('blur', (e) => {
+        const clamped = clampTransparencyThreshold(e.target.value);
+        state.transparencyThreshold = clamped;
+        e.target.value = clamped;
+    });
+
+    elements.deleteTransparentBtn.addEventListener('click', () => {
+        applyTransparencyCleanup(state.transparencyThreshold);
+    });
+}
+
+function clampTransparencyThreshold(value) {
+    const parsed = parseInt(value, 10);
+    if (Number.isNaN(parsed)) return state.transparencyThreshold;
+    return Math.max(state.transparencyThresholdMin, Math.min(state.transparencyThresholdMax, parsed));
+}
+
+function setTransparencyStatus(message, tone = 'neutral') {
+    elements.transparencyStatus.textContent = message;
+
+    if (tone === 'error') {
+        elements.transparencyStatus.style.color = '#ff6b6b';
+    } else if (tone === 'success') {
+        elements.transparencyStatus.style.color = '#6bc5ff';
+    } else {
+        elements.transparencyStatus.style.color = '#888';
     }
 }
 
@@ -314,10 +481,11 @@ function applyReductionEntryToFrames(reductionEntry) {
 
 function applyPaintEntryToFrames(paintEntry) {
     const frameData = state.currentFrames[paintEntry.frameIndex];
-    if (!frameData) return;
+    if (!frameData || !Array.isArray(paintEntry.pixels)) return;
 
     for (const change of paintEntry.pixels) {
         const dataIndex = change.pixelIndex * 4;
+        if (dataIndex < 0 || dataIndex + 3 >= frameData.length) continue;
         frameData[dataIndex] = change.to.r;
         frameData[dataIndex + 1] = change.to.g;
         frameData[dataIndex + 2] = change.to.b;
@@ -325,10 +493,51 @@ function applyPaintEntryToFrames(paintEntry) {
     }
 }
 
-function rebuildFramesFromHistory() {
-    for (let i = 0; i < state.originalFrames.length; i++) {
-        state.currentFrames[i] = new Uint8ClampedArray(state.originalFrames[i]);
+function applyResizeEntryToFrames(resizeEntry) {
+    const fromWidth = resizeEntry.fromWidth || state.gifWidth;
+    const fromHeight = resizeEntry.fromHeight || state.gifHeight;
+    const toWidth = resizeEntry.toWidth;
+    const toHeight = resizeEntry.toHeight;
+
+    if (!toWidth || !toHeight || toWidth < 1 || toHeight < 1) return;
+
+    state.currentFrames = resizeFramesNearestNeighbor(
+        state.currentFrames,
+        fromWidth,
+        fromHeight,
+        toWidth,
+        toHeight
+    );
+    state.gifWidth = toWidth;
+    state.gifHeight = toHeight;
+}
+
+function applyTransparencyCleanupEntryToFrames(cleanupEntry) {
+    const selectedSet = cleanupEntry.hasSelection && cleanupEntry.selectedIndices
+        ? new Set(cleanupEntry.selectedIndices)
+        : null;
+    const thresholdAlpha = cleanupEntry.thresholdAlpha ?? Math.round((cleanupEntry.thresholdPercent / 100) * 255);
+
+    for (const frameData of state.currentFrames) {
+        for (let i = 0; i < frameData.length; i += 4) {
+            const pixelIndex = i / 4;
+            if (selectedSet && !selectedSet.has(pixelIndex)) continue;
+
+            const alpha = frameData[i + 3];
+            if (alpha > 0 && alpha < thresholdAlpha) {
+                frameData[i] = 0;
+                frameData[i + 1] = 0;
+                frameData[i + 2] = 0;
+                frameData[i + 3] = 0;
+            }
+        }
     }
+}
+
+function rebuildFramesFromHistory() {
+    state.gifWidth = state.originalWidth;
+    state.gifHeight = state.originalHeight;
+    state.currentFrames = state.originalFrames.map((frame) => new Uint8ClampedArray(frame));
 
     state.colorSwapHistory = [];
 
@@ -340,6 +549,10 @@ function rebuildFramesFromHistory() {
             applyReductionEntryToFrames(entry);
         } else if (entry.type === 'paint') {
             applyPaintEntryToFrames(entry);
+        } else if (entry.type === 'resize') {
+            applyResizeEntryToFrames(entry);
+        } else if (entry.type === 'transparency_cleanup') {
+            applyTransparencyCleanupEntryToFrames(entry);
         }
     }
 }
@@ -414,11 +627,21 @@ elements.uploadArea.addEventListener('drop', (e) => {
     e.preventDefault();
     elements.uploadArea.style.borderColor = '#e94560';
     setReduceStatus('');
-    handleFiles(Array.from(e.dataTransfer.files), updateSwapHistoryDisplay);
+    setResizeStatus('');
+    setTransparencyStatus('');
+    Promise.resolve(handleFiles(Array.from(e.dataTransfer.files), updateSwapHistoryDisplay))
+        .finally(() => {
+            syncResizeInputsFromCurrentSize();
+        });
 });
 elements.fileInput.addEventListener('change', (e) => {
     setReduceStatus('');
-    handleFiles(Array.from(e.target.files), updateSwapHistoryDisplay);
+    setResizeStatus('');
+    setTransparencyStatus('');
+    Promise.resolve(handleFiles(Array.from(e.target.files), updateSwapHistoryDisplay))
+        .finally(() => {
+            syncResizeInputsFromCurrentSize();
+        });
 });
 
 elements.playPauseBtn.addEventListener('click', togglePlayPause);
@@ -434,7 +657,12 @@ elements.exportPresetBtn.addEventListener('click', exportPreset);
 elements.importPresetBtn.addEventListener('click', () => elements.importPresetInput.click());
 elements.importPresetInput.addEventListener('change', (e) => {
     setReduceStatus('');
-    importPreset(e, updateSwapHistoryDisplay);
+    setResizeStatus('');
+    setTransparencyStatus('');
+    Promise.resolve(importPreset(e, updateSwapHistoryDisplay))
+        .finally(() => {
+            syncResizeInputsFromCurrentSize();
+        });
 });
 
 elements.zoomSlider.addEventListener('input', (e) => {
@@ -1019,16 +1247,187 @@ function applyColorReduction(targetValue) {
     renderCurrentFrame();
     updateSwapHistoryDisplay();
     clearColorSelectionState();
+    setTransparencyStatus('');
     setReduceStatus(
         `Reduced ${fromColorCount} -> ${reductionEntry.toColorCount} colors (${changedPixels} pixels changed).`,
         'success'
     );
 }
 
-function resetChanges() {
-    for (let i = 0; i < state.originalFrames.length; i++) {
-        state.currentFrames[i] = new Uint8ClampedArray(state.originalFrames[i]);
+function applyTransparencyCleanup(targetValue) {
+    if (state.currentFrames.length === 0) {
+        setTransparencyStatus('Load an image before deleting transparent pixels.', 'error');
+        return;
     }
+
+    const thresholdPercent = clampTransparencyThreshold(targetValue);
+    state.transparencyThreshold = thresholdPercent;
+    elements.transparencyThresholdInput.value = thresholdPercent;
+
+    const thresholdAlpha = Math.round((thresholdPercent / 100) * 255);
+    const selectionContext = getSelectionContext();
+    let changedPixels = 0;
+    let affectedPixelCount = 0;
+
+    for (const frameData of state.currentFrames) {
+        for (let i = 0; i < frameData.length; i += 4) {
+            const pixelIndex = i / 4;
+            if (selectionContext.hasSelection && !selectionContext.selectedSet.has(pixelIndex)) continue;
+
+            affectedPixelCount++;
+            const alpha = frameData[i + 3];
+            if (alpha > 0 && alpha < thresholdAlpha) {
+                frameData[i] = 0;
+                frameData[i + 1] = 0;
+                frameData[i + 2] = 0;
+                frameData[i + 3] = 0;
+                changedPixels++;
+            }
+        }
+    }
+
+    if (changedPixels === 0) {
+        setTransparencyStatus(
+            `No pixels found below ${thresholdPercent}% opacity in the current scope.`,
+            'neutral'
+        );
+        return;
+    }
+
+    const cleanupEntry = {
+        type: 'transparency_cleanup',
+        thresholdPercent,
+        thresholdAlpha,
+        hasSelection: selectionContext.hasSelection,
+        affectedPixelCount,
+        changedPixelCount: changedPixels
+    };
+
+    if (selectionContext.hasSelection) {
+        cleanupEntry.selectedIndices = selectionContext.selectedIndices;
+    }
+
+    pushEditHistoryEntry(cleanupEntry);
+    extractPalette();
+    renderCurrentFrame();
+    renderSelectionOverlay();
+    updateSwapHistoryDisplay();
+    clearColorSelectionState();
+    setTransparencyStatus(
+        `Deleted ${changedPixels} pixels below ${thresholdPercent}% opacity.`,
+        'success'
+    );
+}
+
+function applyImageResize() {
+    if (state.currentFrames.length === 0) {
+        setResizeStatus('Load an image before resizing.', 'error');
+        return;
+    }
+
+    const fromWidth = state.gifWidth;
+    const fromHeight = state.gifHeight;
+    let toWidth = fromWidth;
+    let toHeight = fromHeight;
+    let scalePercent = null;
+
+    if (state.resizeMode === 'pixels') {
+        const targetWidth = clampResizeDimension(elements.resizeWidthInput.value, fromWidth);
+        const targetHeight = clampResizeDimension(elements.resizeHeightInput.value, fromHeight);
+        state.resizeWidth = targetWidth;
+        state.resizeHeight = targetHeight;
+        elements.resizeWidthInput.value = targetWidth;
+        elements.resizeHeightInput.value = targetHeight;
+        toWidth = targetWidth;
+        toHeight = targetHeight;
+
+        const percentX = (toWidth / fromWidth) * 100;
+        const percentY = (toHeight / fromHeight) * 100;
+        if (Math.abs(percentX - percentY) < 0.0001) {
+            scalePercent = Math.round(percentX * 100) / 100;
+        }
+    } else {
+        scalePercent = clampResizePercent(elements.resizePercentInput.value);
+        state.resizePercent = scalePercent;
+        elements.resizePercentInput.value = scalePercent;
+        setActiveResizePreset(scalePercent);
+
+        toWidth = Math.max(1, Math.round((fromWidth * scalePercent) / 100));
+        toHeight = Math.max(1, Math.round((fromHeight * scalePercent) / 100));
+    }
+
+    if (toWidth === fromWidth && toHeight === fromHeight) {
+        setResizeStatus(`No resize needed: image is already ${fromWidth}x${fromHeight}.`, 'neutral');
+        return;
+    }
+
+    if (toWidth > state.resizeMaxDimension || toHeight > state.resizeMaxDimension) {
+        setResizeStatus(
+            `Resize blocked: max dimension is ${state.resizeMaxDimension}px (requested ${toWidth}x${toHeight}).`,
+            'error'
+        );
+        return;
+    }
+
+    const wasPlaying = state.isPlaying;
+    stopAnimation();
+
+    state.currentFrames = resizeFramesNearestNeighbor(
+        state.currentFrames,
+        fromWidth,
+        fromHeight,
+        toWidth,
+        toHeight
+    );
+    state.gifWidth = toWidth;
+    state.gifHeight = toHeight;
+
+    state.selectionMask = null;
+    state.polygonPoints = [];
+    state.tempPolygonPoint = null;
+    state.isDrawingSelection = false;
+    state.isPainting = false;
+    state.activePaintTool = null;
+    state.strokeSelectionSet = null;
+    state.strokePixelMap.clear();
+
+    const resizeEntry = {
+        type: 'resize',
+        resizeMode: state.resizeMode,
+        fromWidth,
+        fromHeight,
+        toWidth,
+        toHeight
+    };
+    if (typeof scalePercent === 'number') {
+        resizeEntry.scalePercent = scalePercent;
+    }
+    pushEditHistoryEntry(resizeEntry);
+
+    updateCanvasSize();
+    extractPalette();
+    renderCurrentFrame();
+    renderSelectionOverlay();
+    syncResizeInputsFromCurrentSize();
+    updateSelectionInfo();
+    updateSwapHistoryDisplay();
+    clearColorSelectionState();
+    setTransparencyStatus('');
+    if (typeof scalePercent === 'number') {
+        setResizeStatus(`Resized ${fromWidth}x${fromHeight} -> ${toWidth}x${toHeight} (${scalePercent}%).`, 'success');
+    } else {
+        setResizeStatus(`Resized ${fromWidth}x${fromHeight} -> ${toWidth}x${toHeight} (px mode).`, 'success');
+    }
+
+    if (wasPlaying && state.currentFrames.length > 1) {
+        startAnimation();
+    }
+}
+
+function resetChanges() {
+    state.gifWidth = state.originalWidth;
+    state.gifHeight = state.originalHeight;
+    state.currentFrames = state.originalFrames.map((frame) => new Uint8ClampedArray(frame));
     state.colorSwapHistory = [];
     state.editHistory = [];
     state.redoHistory = [];
@@ -1039,13 +1438,17 @@ function resetChanges() {
     state.activePaintTool = null;
     state.strokeSelectionSet = null;
     state.strokePixelMap.clear();
+    updateCanvasSize();
     extractPalette();
     renderCurrentFrame();
     renderSelectionOverlay();
+    syncResizeInputsFromCurrentSize();
     updateSwapHistoryDisplay();
     updateSelectionInfo();
     clearColorSelectionState();
     setReduceStatus('');
+    setResizeStatus('');
+    setTransparencyStatus('');
 }
 
 function updateSwapHistoryDisplay() {
@@ -1062,6 +1465,24 @@ function updateSwapHistoryDisplay() {
                 <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #4caf50;">Q</span>
                 <span style="color: #666; flex: 1;">Reduce to ${entry.targetCount} colors (${scopeText})</span>
                 <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this reduction">x</button>
+            </div>`;
+        }
+
+        if (entry.type === 'transparency_cleanup') {
+            const scopeText = entry.hasSelection ? 'selection' : 'full image';
+            return `<div style="display: flex; align-items: center; gap: 5px; margin: 3px 0;">
+                <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #6bc5ff;">T</span>
+                <span style="color: #666; flex: 1;">Delete transparency below ${entry.thresholdPercent}% (${scopeText})</span>
+                <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this transparency cleanup">x</button>
+            </div>`;
+        }
+
+        if (entry.type === 'resize') {
+            const percentText = typeof entry.scalePercent === 'number' ? ` (${entry.scalePercent}%)` : '';
+            return `<div style="display: flex; align-items: center; gap: 5px; margin: 3px 0;">
+                <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #6bc5ff;">R</span>
+                <span style="color: #666; flex: 1;">Resize ${entry.fromWidth}x${entry.fromHeight} -> ${entry.toWidth}x${entry.toHeight}${percentText}</span>
+                <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this resize">x</button>
             </div>`;
         }
 
@@ -1097,11 +1518,15 @@ function undoLastEdit() {
     state.redoHistory.push(entry);
     rebuildFramesFromHistory();
 
+    updateCanvasSize();
     extractPalette();
     renderCurrentFrame();
     renderSelectionOverlay();
+    syncResizeInputsFromCurrentSize();
     updateSwapHistoryDisplay();
+    updateSelectionInfo();
     clearColorSelectionState();
+    setTransparencyStatus('');
 }
 
 function redoLastEdit() {
@@ -1111,11 +1536,15 @@ function redoLastEdit() {
     state.editHistory.push(entry);
     rebuildFramesFromHistory();
 
+    updateCanvasSize();
     extractPalette();
     renderCurrentFrame();
     renderSelectionOverlay();
+    syncResizeInputsFromCurrentSize();
     updateSwapHistoryDisplay();
+    updateSelectionInfo();
     clearColorSelectionState();
+    setTransparencyStatus('');
 }
 
 function undoSingleSwap(index) {
@@ -1125,11 +1554,15 @@ function undoSingleSwap(index) {
     state.redoHistory = [];
     rebuildFramesFromHistory();
 
+    updateCanvasSize();
     extractPalette();
     renderCurrentFrame();
     renderSelectionOverlay();
+    syncResizeInputsFromCurrentSize();
     updateSwapHistoryDisplay();
+    updateSelectionInfo();
     clearColorSelectionState();
+    setTransparencyStatus('');
 }
 window.undoSingleSwap = undoSingleSwap;
 

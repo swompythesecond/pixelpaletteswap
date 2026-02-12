@@ -270,3 +270,31 @@ export function quantizeColorsLabWeighted(colorCounts, targetCount, maxIteration
 
     return buildColorMapToCentroids(colors, centroids);
 }
+
+export function resizeFramesNearestNeighbor(frames, fromWidth, fromHeight, toWidth, toHeight) {
+    if (!Array.isArray(frames) || frames.length === 0) return [];
+
+    const inputCanvas = document.createElement('canvas');
+    inputCanvas.width = fromWidth;
+    inputCanvas.height = fromHeight;
+    const inputCtx = inputCanvas.getContext('2d');
+
+    const outputCanvas = document.createElement('canvas');
+    outputCanvas.width = toWidth;
+    outputCanvas.height = toHeight;
+    const outputCtx = outputCanvas.getContext('2d');
+    outputCtx.imageSmoothingEnabled = false;
+
+    const resizedFrames = [];
+
+    for (const frameData of frames) {
+        const imageData = new ImageData(new Uint8ClampedArray(frameData), fromWidth, fromHeight);
+        inputCtx.putImageData(imageData, 0, 0);
+        outputCtx.clearRect(0, 0, toWidth, toHeight);
+        outputCtx.drawImage(inputCanvas, 0, 0, fromWidth, fromHeight, 0, 0, toWidth, toHeight);
+        const resizedImageData = outputCtx.getImageData(0, 0, toWidth, toHeight);
+        resizedFrames.push(new Uint8ClampedArray(resizedImageData.data));
+    }
+
+    return resizedFrames;
+}

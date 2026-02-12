@@ -48,6 +48,9 @@ export const elements = {
     selectionInfo: document.getElementById('selectionInfo'),
     invertSelectionBtn: document.getElementById('invertSelectionBtn'),
     clearSelectionBtn: document.getElementById('clearSelectionBtn'),
+    transparencyThresholdInput: document.getElementById('transparencyThresholdInput'),
+    deleteTransparentBtn: document.getElementById('deleteTransparentBtn'),
+    transparencyStatus: document.getElementById('transparencyStatus'),
 
     // Color grouping elements
     groupingToggle: document.getElementById('groupingToggle'),
@@ -61,6 +64,16 @@ export const elements = {
     reduceColorInput: document.getElementById('reduceColorInput'),
     applyReduceBtn: document.getElementById('applyReduceBtn'),
     reduceStatus: document.getElementById('reduceStatus'),
+    resizePresetButtons: document.querySelectorAll('.resize-preset-btn'),
+    resizeModePercentBtn: document.getElementById('resizeModePercentBtn'),
+    resizeModePixelsBtn: document.getElementById('resizeModePixelsBtn'),
+    resizePercentPanel: document.getElementById('resizePercentPanel'),
+    resizePixelsPanel: document.getElementById('resizePixelsPanel'),
+    resizePercentInput: document.getElementById('resizePercentInput'),
+    resizeWidthInput: document.getElementById('resizeWidthInput'),
+    resizeHeightInput: document.getElementById('resizeHeightInput'),
+    applyResizeBtn: document.getElementById('applyResizeBtn'),
+    resizeStatus: document.getElementById('resizeStatus'),
 
     // Contexts
     ctx: document.getElementById('previewCanvas').getContext('2d'),

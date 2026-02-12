@@ -59,6 +59,8 @@ export async function loadImages(files, updateSwapHistoryDisplay) {
 
         state.gifWidth = maxWidth;
         state.gifHeight = maxHeight;
+        state.originalWidth = maxWidth;
+        state.originalHeight = maxHeight;
 
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = maxWidth;
@@ -160,6 +162,8 @@ export async function loadGif(file, updateSwapHistoryDisplay) {
 
         state.gifWidth = gif.lsd.width;
         state.gifHeight = gif.lsd.height;
+        state.originalWidth = gif.lsd.width;
+        state.originalHeight = gif.lsd.height;
 
         updateCanvasSize();
         extractPalette();
