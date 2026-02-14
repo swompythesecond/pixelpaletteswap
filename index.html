@@ -169,6 +169,7 @@
                         <label for="transparencyThresholdInput">Min opacity (%):</label>
                         <input type="number" id="transparencyThresholdInput" min="0" max="100" value="100">
                         <button id="deleteTransparentBtn" style="background: #555;">🧹 Delete Transparent Pixels</button>
+                        <button id="cropToAssetBtn" style="background: #555;">✂ Crop To Asset Bounds</button>
                     </div>
                     <p id="transparencyStatus" class="transparency-status"></p>
                 </div>
@@ -293,11 +294,11 @@
                     <p class="resize-hint">Scale the whole image/animation with nearest-neighbor pixel resizing.</p>
 
                     <div class="resize-mode-toggle">
-                        <button class="resize-mode-btn active" id="resizeModePercentBtn" type="button">Percent (%)</button>
-                        <button class="resize-mode-btn" id="resizeModePixelsBtn" type="button">Pixels (px)</button>
+                        <button class="resize-mode-btn active" id="resizeModePixelsBtn" type="button">Pixels (px)</button>
+                        <button class="resize-mode-btn" id="resizeModePercentBtn" type="button">Percent (%)</button>
                     </div>
 
-                    <div id="resizePercentPanel">
+                    <div id="resizePercentPanel" class="hidden">
                         <div class="resize-presets">
                             <button class="resize-preset-btn" data-percent="50" type="button">50%</button>
                             <button class="resize-preset-btn active" data-percent="100" type="button">100%</button>
@@ -310,7 +311,7 @@
                         </div>
                     </div>
 
-                    <div id="resizePixelsPanel" class="hidden">
+                    <div id="resizePixelsPanel">
                         <div class="resize-controls">
                             <label for="resizeWidthInput">Width (px):</label>
                             <input type="number" id="resizeWidthInput" min="1" max="4096" value="1">
@@ -319,6 +320,10 @@
                             <label for="resizeHeightInput">Height (px):</label>
                             <input type="number" id="resizeHeightInput" min="1" max="4096" value="1">
                         </div>
+                        <label class="resize-lock-aspect">
+                            <input type="checkbox" id="resizeKeepAspectCheckbox" checked>
+                            Keep aspect ratio
+                        </label>
                     </div>
 
                     <button id="applyResizeBtn" style="width: 100%; margin-top: 10px;" type="button">Apply Resize</button>

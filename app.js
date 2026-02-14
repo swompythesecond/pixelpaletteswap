@@ -1,6 +1,14 @@
 import { state } from './js/state.js';
 import { elements } from './js/dom.js';
-import { rgbToHex, rgbToLab, labToRgb, quantizeColorsLabWeighted, resizeFramesNearestNeighbor } from './js/utils.js';
+import {
+    rgbToHex,
+    rgbToLab,
+    labToRgb,
+    quantizeColorsLabWeighted,
+    resizeFramesNearestNeighbor,
+    getOpaqueBoundsAcrossFrames,
+    cropFramesToBounds
+} from './js/utils.js';
 import { 
     selectTool, 
     updateSelectionInfo, 
@@ -43,6 +51,8 @@ setReduceStatus('');
 setResizeStatus('');
 setTransparencyStatus('');
 updateSwapHistoryDisplay();
+
+let resizeAspectDriver = 'width';
 
 function initializeReduceControls() {
     elements.reduceColorInput.value = state.reduceColorTarget;
@@ -117,6 +127,7 @@ function initializeResizeControls() {
     elements.resizePercentInput.value = state.resizePercent;
     elements.resizeWidthInput.value = state.resizeWidth;
     elements.resizeHeightInput.value = state.resizeHeight;
+    elements.resizeKeepAspectCheckbox.checked = state.resizeKeepAspect;
     setActiveResizePreset(state.resizePercent);
     setResizeMode(state.resizeMode);
 
@@ -159,27 +170,68 @@ function initializeResizeControls() {
     elements.resizeWidthInput.addEventListener('input', (e) => {
         const parsed = parseInt(e.target.value, 10);
         if (!Number.isNaN(parsed)) {
-            state.resizeWidth = clampResizeDimension(parsed, state.resizeWidth);
+            resizeAspectDriver = 'width';
+            const clampedWidth = clampResizeDimension(parsed, state.resizeWidth);
+            state.resizeWidth = clampedWidth;
+
+            if (state.resizeKeepAspect) {
+                const linkedHeight = getAspectLockedHeight(clampedWidth);
+                state.resizeHeight = linkedHeight;
+                elements.resizeHeightInput.value = linkedHeight;
+            }
         }
     });
 
     elements.resizeHeightInput.addEventListener('input', (e) => {
         const parsed = parseInt(e.target.value, 10);
         if (!Number.isNaN(parsed)) {
-            state.resizeHeight = clampResizeDimension(parsed, state.resizeHeight);
+            resizeAspectDriver = 'height';
+            const clampedHeight = clampResizeDimension(parsed, state.resizeHeight);
+            state.resizeHeight = clampedHeight;
+
+            if (state.resizeKeepAspect) {
+                const linkedWidth = getAspectLockedWidth(clampedHeight);
+                state.resizeWidth = linkedWidth;
+                elements.resizeWidthInput.value = linkedWidth;
+            }
         }
     });
 
     elements.resizeWidthInput.addEventListener('blur', (e) => {
-        const clamped = clampResizeDimension(e.target.value, state.gifWidth || state.resizeWidth);
-        state.resizeWidth = clamped;
-        e.target.value = clamped;
+        resizeAspectDriver = 'width';
+        const clampedWidth = clampResizeDimension(e.target.value, state.gifWidth || state.resizeWidth);
+        state.resizeWidth = clampedWidth;
+        e.target.value = clampedWidth;
+
+        if (state.resizeKeepAspect) {
+            const linkedHeight = getAspectLockedHeight(clampedWidth);
+            state.resizeHeight = linkedHeight;
+            elements.resizeHeightInput.value = linkedHeight;
+        }
     });
 
     elements.resizeHeightInput.addEventListener('blur', (e) => {
-        const clamped = clampResizeDimension(e.target.value, state.gifHeight || state.resizeHeight);
-        state.resizeHeight = clamped;
-        e.target.value = clamped;
+        resizeAspectDriver = 'height';
+        const clampedHeight = clampResizeDimension(e.target.value, state.gifHeight || state.resizeHeight);
+        state.resizeHeight = clampedHeight;
+        e.target.value = clampedHeight;
+
+        if (state.resizeKeepAspect) {
+            const linkedWidth = getAspectLockedWidth(clampedHeight);
+            state.resizeWidth = linkedWidth;
+            elements.resizeWidthInput.value = linkedWidth;
+        }
+    });
+
+    elements.resizeKeepAspectCheckbox.addEventListener('change', (e) => {
+        state.resizeKeepAspect = e.target.checked;
+        if (state.resizeKeepAspect) {
+            resizeAspectDriver = 'width';
+            const linkedHeight = getAspectLockedHeight(state.resizeWidth);
+            state.resizeHeight = linkedHeight;
+            elements.resizeHeightInput.value = linkedHeight;
+        }
+        setResizeStatus('');
     });
 
     elements.applyResizeBtn.addEventListener('click', () => {
@@ -199,6 +251,24 @@ function clampResizeDimension(value, fallback) {
     const parsed = parseInt(value, 10);
     if (Number.isNaN(parsed)) return fallback;
     return Math.max(1, Math.min(state.resizeMaxDimension, parsed));
+}
+
+function getResizeAspectBaseDimensions() {
+    const baseWidth = state.gifWidth > 0 ? state.gifWidth : Math.max(1, state.resizeWidth);
+    const baseHeight = state.gifHeight > 0 ? state.gifHeight : Math.max(1, state.resizeHeight);
+    return { baseWidth, baseHeight };
+}
+
+function getAspectLockedHeight(width) {
+    const { baseWidth, baseHeight } = getResizeAspectBaseDimensions();
+    const scaledHeight = Math.round((width * baseHeight) / baseWidth);
+    return clampResizeDimension(scaledHeight, Math.max(1, baseHeight));
+}
+
+function getAspectLockedWidth(height) {
+    const { baseWidth, baseHeight } = getResizeAspectBaseDimensions();
+    const scaledWidth = Math.round((height * baseWidth) / baseHeight);
+    return clampResizeDimension(scaledWidth, Math.max(1, baseWidth));
 }
 
 function setResizeMode(mode) {
@@ -221,6 +291,7 @@ function syncResizeInputsFromCurrentSize() {
     if (state.currentFrames.length === 0) return;
     state.resizeWidth = state.gifWidth;
     state.resizeHeight = state.gifHeight;
+    resizeAspectDriver = 'width';
     elements.resizeWidthInput.value = state.resizeWidth;
     elements.resizeHeightInput.value = state.resizeHeight;
 }
@@ -255,6 +326,10 @@ function initializeTransparencyControls() {
 
     elements.deleteTransparentBtn.addEventListener('click', () => {
         applyTransparencyCleanup(state.transparencyThreshold);
+    });
+
+    elements.cropToAssetBtn.addEventListener('click', () => {
+        applyCropToAssetBounds();
     });
 }
 
@@ -512,6 +587,42 @@ function applyResizeEntryToFrames(resizeEntry) {
     state.gifHeight = toHeight;
 }
 
+function applyCropTransparentBorderEntryToFrames(cropEntry) {
+    const fromWidth = cropEntry.fromWidth || state.gifWidth;
+    const fromHeight = cropEntry.fromHeight || state.gifHeight;
+    const toWidth = cropEntry.toWidth;
+    const toHeight = cropEntry.toHeight;
+    const offsetX = cropEntry.offsetX ?? 0;
+    const offsetY = cropEntry.offsetY ?? 0;
+
+    if (
+        !Number.isInteger(toWidth) || !Number.isInteger(toHeight) ||
+        !Number.isInteger(offsetX) || !Number.isInteger(offsetY) ||
+        toWidth < 1 || toHeight < 1 ||
+        offsetX < 0 || offsetY < 0 ||
+        offsetX + toWidth > fromWidth ||
+        offsetY + toHeight > fromHeight
+    ) {
+        return;
+    }
+
+    const bounds = {
+        minX: offsetX,
+        minY: offsetY,
+        width: toWidth,
+        height: toHeight
+    };
+
+    state.currentFrames = cropFramesToBounds(
+        state.currentFrames,
+        fromWidth,
+        fromHeight,
+        bounds
+    );
+    state.gifWidth = toWidth;
+    state.gifHeight = toHeight;
+}
+
 function applyTransparencyCleanupEntryToFrames(cleanupEntry) {
     const selectedSet = cleanupEntry.hasSelection && cleanupEntry.selectedIndices
         ? new Set(cleanupEntry.selectedIndices)
@@ -551,6 +662,8 @@ function rebuildFramesFromHistory() {
             applyPaintEntryToFrames(entry);
         } else if (entry.type === 'resize') {
             applyResizeEntryToFrames(entry);
+        } else if (entry.type === 'crop_transparent_border') {
+            applyCropTransparentBorderEntryToFrames(entry);
         } else if (entry.type === 'transparency_cleanup') {
             applyTransparencyCleanupEntryToFrames(entry);
         }
@@ -1319,6 +1432,76 @@ function applyTransparencyCleanup(targetValue) {
     );
 }
 
+function applyCropToAssetBounds() {
+    if (state.currentFrames.length === 0) {
+        setTransparencyStatus('Load an image before cropping.', 'error');
+        return;
+    }
+
+    const fromWidth = state.gifWidth;
+    const fromHeight = state.gifHeight;
+    const bounds = getOpaqueBoundsAcrossFrames(state.currentFrames, fromWidth, fromHeight);
+
+    if (!bounds) {
+        setTransparencyStatus('Image has no visible pixels to crop.', 'error');
+        return;
+    }
+
+    if (
+        bounds.minX === 0 &&
+        bounds.minY === 0 &&
+        bounds.width === fromWidth &&
+        bounds.height === fromHeight
+    ) {
+        setTransparencyStatus('No transparent border to crop.', 'neutral');
+        return;
+    }
+
+    const wasPlaying = state.isPlaying;
+    stopAnimation();
+
+    state.currentFrames = cropFramesToBounds(state.currentFrames, fromWidth, fromHeight, bounds);
+    state.gifWidth = bounds.width;
+    state.gifHeight = bounds.height;
+
+    state.selectionMask = null;
+    state.polygonPoints = [];
+    state.tempPolygonPoint = null;
+    state.isDrawingSelection = false;
+    state.isPainting = false;
+    state.activePaintTool = null;
+    state.strokeSelectionSet = null;
+    state.strokePixelMap.clear();
+
+    pushEditHistoryEntry({
+        type: 'crop_transparent_border',
+        fromWidth,
+        fromHeight,
+        toWidth: bounds.width,
+        toHeight: bounds.height,
+        offsetX: bounds.minX,
+        offsetY: bounds.minY
+    });
+
+    updateCanvasSize();
+    extractPalette();
+    renderCurrentFrame();
+    renderSelectionOverlay();
+    syncResizeInputsFromCurrentSize();
+    updateSelectionInfo();
+    updateSwapHistoryDisplay();
+    clearColorSelectionState();
+    setResizeStatus('');
+    setTransparencyStatus(
+        `Cropped ${fromWidth}x${fromHeight} -> ${bounds.width}x${bounds.height} (offset ${bounds.minX},${bounds.minY}).`,
+        'success'
+    );
+
+    if (wasPlaying && state.currentFrames.length > 1) {
+        startAnimation();
+    }
+}
+
 function applyImageResize() {
     if (state.currentFrames.length === 0) {
         setResizeStatus('Load an image before resizing.', 'error');
@@ -1332,8 +1515,17 @@ function applyImageResize() {
     let scalePercent = null;
 
     if (state.resizeMode === 'pixels') {
-        const targetWidth = clampResizeDimension(elements.resizeWidthInput.value, fromWidth);
-        const targetHeight = clampResizeDimension(elements.resizeHeightInput.value, fromHeight);
+        let targetWidth = clampResizeDimension(elements.resizeWidthInput.value, fromWidth);
+        let targetHeight = clampResizeDimension(elements.resizeHeightInput.value, fromHeight);
+
+        if (state.resizeKeepAspect) {
+            if (resizeAspectDriver === 'height') {
+                targetWidth = getAspectLockedWidth(targetHeight);
+            } else {
+                targetHeight = getAspectLockedHeight(targetWidth);
+            }
+        }
+
         state.resizeWidth = targetWidth;
         state.resizeHeight = targetHeight;
         elements.resizeWidthInput.value = targetWidth;
@@ -1483,6 +1675,14 @@ function updateSwapHistoryDisplay() {
                 <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #6bc5ff;">R</span>
                 <span style="color: #666; flex: 1;">Resize ${entry.fromWidth}x${entry.fromHeight} -> ${entry.toWidth}x${entry.toHeight}${percentText}</span>
                 <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this resize">x</button>
+            </div>`;
+        }
+
+        if (entry.type === 'crop_transparent_border') {
+            return `<div style="display: flex; align-items: center; gap: 5px; margin: 3px 0;">
+                <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #6bc5ff;">C</span>
+                <span style="color: #666; flex: 1;">Crop border ${entry.fromWidth}x${entry.fromHeight} -> ${entry.toWidth}x${entry.toHeight}</span>
+                <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this crop">x</button>
             </div>`;
         }
 

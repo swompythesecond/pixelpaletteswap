@@ -26,9 +26,10 @@ export const state = {
     resizeMinPercent: 1,
     resizeMaxPercent: 1600,
     resizeMaxDimension: 4096,
-    resizeMode: 'percent', // 'percent' | 'pixels'
+    resizeMode: 'pixels', // 'percent' | 'pixels'
     resizeWidth: 1,
     resizeHeight: 1,
+    resizeKeepAspect: true,
     transparencyThreshold: 100, // Min opacity threshold in percent (0-100)
     transparencyThresholdMin: 0,
     transparencyThresholdMax: 100,

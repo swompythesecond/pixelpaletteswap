@@ -554,6 +554,10 @@ button:disabled {
     font-size: 11px;
 }
 
+#cropToAssetBtn {
+    flex: 1 0 100%;
+}
+
 .transparency-status {
     margin: 6px 0 0;
     min-height: 16px;
@@ -884,6 +888,20 @@ button:disabled {
 
 .resize-pixels-row {
     margin-top: 8px;
+}
+
+.resize-lock-aspect {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #aaa;
+    cursor: pointer;
+}
+
+.resize-lock-aspect input[type="checkbox"] {
+    accent-color: #6bc5ff;
 }
 
 .resize-status {

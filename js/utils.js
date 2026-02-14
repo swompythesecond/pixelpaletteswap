@@ -298,3 +298,83 @@ export function resizeFramesNearestNeighbor(frames, fromWidth, fromHeight, toWid
 
     return resizedFrames;
 }
+
+export function getOpaqueBoundsAcrossFrames(frames, width, height) {
+    if (!Array.isArray(frames) || frames.length === 0 || width < 1 || height < 1) {
+        return null;
+    }
+
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+
+    for (const frameData of frames) {
+        if (!frameData || frameData.length !== width * height * 4) continue;
+
+        for (let i = 3; i < frameData.length; i += 4) {
+            if (frameData[i] === 0) continue;
+
+            const pixelIndex = (i - 3) / 4;
+            const x = pixelIndex % width;
+            const y = Math.floor(pixelIndex / width);
+
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+        }
+    }
+
+    if (maxX < 0 || maxY < 0) {
+        return null;
+    }
+
+    return {
+        minX,
+        minY,
+        maxX,
+        maxY,
+        width: maxX - minX + 1,
+        height: maxY - minY + 1
+    };
+}
+
+export function cropFramesToBounds(frames, fromWidth, fromHeight, bounds) {
+    if (!Array.isArray(frames) || frames.length === 0) return [];
+    if (!bounds) return frames.map((frame) => new Uint8ClampedArray(frame));
+
+    const minX = bounds.minX ?? 0;
+    const minY = bounds.minY ?? 0;
+    const toWidth = bounds.width;
+    const toHeight = bounds.height;
+
+    if (
+        !Number.isInteger(minX) || !Number.isInteger(minY) ||
+        !Number.isInteger(toWidth) || !Number.isInteger(toHeight) ||
+        toWidth < 1 || toHeight < 1 ||
+        minX < 0 || minY < 0 ||
+        minX + toWidth > fromWidth ||
+        minY + toHeight > fromHeight
+    ) {
+        return frames.map((frame) => new Uint8ClampedArray(frame));
+    }
+
+    const croppedFrames = [];
+    const rowByteLength = toWidth * 4;
+
+    for (const frameData of frames) {
+        const cropped = new Uint8ClampedArray(toWidth * toHeight * 4);
+
+        for (let y = 0; y < toHeight; y++) {
+            const srcStart = ((minY + y) * fromWidth + minX) * 4;
+            const dstStart = y * rowByteLength;
+            const srcEnd = srcStart + rowByteLength;
+            cropped.set(frameData.subarray(srcStart, srcEnd), dstStart);
+        }
+
+        croppedFrames.push(cropped);
+    }
+
+    return croppedFrames;
+}

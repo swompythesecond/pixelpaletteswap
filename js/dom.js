@@ -50,6 +50,7 @@ export const elements = {
     clearSelectionBtn: document.getElementById('clearSelectionBtn'),
     transparencyThresholdInput: document.getElementById('transparencyThresholdInput'),
     deleteTransparentBtn: document.getElementById('deleteTransparentBtn'),
+    cropToAssetBtn: document.getElementById('cropToAssetBtn'),
     transparencyStatus: document.getElementById('transparencyStatus'),
 
     // Color grouping elements
@@ -72,6 +73,7 @@ export const elements = {
     resizePercentInput: document.getElementById('resizePercentInput'),
     resizeWidthInput: document.getElementById('resizeWidthInput'),
     resizeHeightInput: document.getElementById('resizeHeightInput'),
+    resizeKeepAspectCheckbox: document.getElementById('resizeKeepAspectCheckbox'),
     applyResizeBtn: document.getElementById('applyResizeBtn'),
     resizeStatus: document.getElementById('resizeStatus'),
 
