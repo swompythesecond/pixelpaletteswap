@@ -50,6 +50,10 @@ export const state = {
     // Palette source state
     sourcePaletteColors: new Map(),
 
+    // Custom palette ordering (null = use default HSL spectrum sort)
+    imagePaletteOrder: null,
+    sourcePaletteOrder: null,
+
     // Color grouping state
     colorGroupingEnabled: false,
     colorGroupingThreshold: 30,      // 0-100 scale, higher = more aggressive grouping

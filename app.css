@@ -152,6 +152,58 @@ button:disabled {
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
+.color-item[draggable="true"],
+.source-color-item[draggable="true"] {
+    cursor: grab;
+}
+
+.color-item.palette-dragging,
+.source-color-item.palette-dragging {
+    opacity: 0.35;
+    cursor: grabbing;
+}
+
+/* swap: highlight the whole item */
+.color-item.palette-drag-over {
+    outline: 2px solid #fff;
+    outline-offset: 1px;
+    transform: scale(1.1);
+    z-index: 1;
+}
+
+.source-color-item.palette-drag-over {
+    outline: 2px solid #e94560;
+    outline-offset: 1px;
+    transform: scale(1.15);
+    z-index: 1;
+}
+
+/* insert-before: left edge line */
+.color-item.palette-drag-insert-before {
+    box-shadow: -3px 0 0 0 #fff;
+    transform: scale(1.05);
+    z-index: 1;
+}
+
+.source-color-item.palette-drag-insert-before {
+    box-shadow: -3px 0 0 0 #e94560;
+    transform: scale(1.1);
+    z-index: 1;
+}
+
+/* insert-after: right edge line */
+.color-item.palette-drag-insert-after {
+    box-shadow: 3px 0 0 0 #fff;
+    transform: scale(1.05);
+    z-index: 1;
+}
+
+.source-color-item.palette-drag-insert-after {
+    box-shadow: 3px 0 0 0 #e94560;
+    transform: scale(1.1);
+    z-index: 1;
+}
+
 .color-item .color-code {
     position: absolute;
     bottom: -20px;

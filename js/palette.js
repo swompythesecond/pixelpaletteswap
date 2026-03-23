@@ -5,6 +5,7 @@ import { computeColorGroups } from './grouping.js';
 
 export function extractPalette() {
     state.colorPalette.clear();
+    state.imagePaletteOrder = null; // Reset to default spectrum sort
 
     for (const frameData of state.currentFrames) {
         for (let i = 0; i < frameData.length; i += 4) {
@@ -86,22 +87,122 @@ export function renderPalette() {
         elements.paletteGrid.classList.remove('grouped-mode');
         state.selectedGroup = null;
 
-        // Sort by color similarity using HSL
-        const sortedColors = [...state.colorPalette.entries()].sort((a, b) => {
-            const hslA = rgbToHsl(a[1].r, a[1].g, a[1].b);
-            const hslB = rgbToHsl(b[1].r, b[1].g, b[1].b);
-
-            if (Math.abs(hslA.h - hslB.h) > 0.02) return hslA.h - hslB.h;
-            if (Math.abs(hslA.s - hslB.s) > 0.1) return hslB.s - hslA.s;
-            return hslB.l - hslA.l;
-        });
+        const sortedColors = getOrderedPaletteColors(
+            state.colorPalette,
+            state.imagePaletteOrder
+        );
 
         for (const [colorKey, colorData] of sortedColors) {
             const div = createColorElement(colorKey, colorData);
             div.addEventListener('click', () => selectColor(colorKey, div));
             elements.paletteGrid.appendChild(div);
         }
+
+        addDragReorder(elements.paletteGrid, '.color-item', 'imagePaletteOrder', renderPalette);
     }
+}
+
+function hslSpectrumSort(entries) {
+    return [...entries].sort((a, b) => {
+        const hslA = rgbToHsl(a[1].r, a[1].g, a[1].b);
+        const hslB = rgbToHsl(b[1].r, b[1].g, b[1].b);
+        if (Math.abs(hslA.h - hslB.h) > 0.02) return hslA.h - hslB.h;
+        if (Math.abs(hslA.s - hslB.s) > 0.1) return hslB.s - hslA.s;
+        return hslB.l - hslA.l;
+    });
+}
+
+function getOrderedPaletteColors(paletteMap, customOrder) {
+    if (!customOrder) {
+        return hslSpectrumSort(paletteMap.entries());
+    }
+    // Use custom order, filtering out removed colors and appending new ones
+    const ordered = customOrder
+        .filter(k => paletteMap.has(k))
+        .map(k => [k, paletteMap.get(k)]);
+    const orderedSet = new Set(customOrder);
+    const newEntries = [...paletteMap.entries()].filter(([k]) => !orderedSet.has(k));
+    return [...ordered, ...hslSpectrumSort(newEntries)];
+}
+
+let _dragSrc = null;
+let _dropMode = 'swap'; // 'swap' | 'insert-before' | 'insert-after'
+
+function getDropMode(e, item) {
+    const rect = item.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width;
+    if (relX < 0.25) return 'insert-before';
+    if (relX > 0.75) return 'insert-after';
+    return 'swap';
+}
+
+function clearDragClasses(container) {
+    container.querySelectorAll('.palette-drag-over, .palette-drag-insert-before, .palette-drag-insert-after')
+        .forEach(el => el.classList.remove('palette-drag-over', 'palette-drag-insert-before', 'palette-drag-insert-after'));
+}
+
+function addDragReorder(container, itemSelector, orderStateKey, rerender) {
+    const items = container.querySelectorAll(itemSelector);
+
+    items.forEach(item => {
+        item.draggable = true;
+
+        item.addEventListener('dragstart', (e) => {
+            _dragSrc = item.dataset.color;
+            item.classList.add('palette-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        item.addEventListener('dragend', () => {
+            item.classList.remove('palette-dragging');
+            clearDragClasses(container);
+        });
+
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (item.dataset.color === _dragSrc) return;
+            _dropMode = getDropMode(e, item);
+            clearDragClasses(container);
+            if (_dropMode === 'swap') {
+                item.classList.add('palette-drag-over');
+            } else if (_dropMode === 'insert-before') {
+                item.classList.add('palette-drag-insert-before');
+            } else {
+                item.classList.add('palette-drag-insert-after');
+            }
+        });
+
+        item.addEventListener('dragleave', () => {
+            item.classList.remove('palette-drag-over', 'palette-drag-insert-before', 'palette-drag-insert-after');
+        });
+
+        item.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const targetKey = item.dataset.color;
+            if (!_dragSrc || _dragSrc === targetKey) return;
+
+            const currentOrder = [...container.querySelectorAll(itemSelector)].map(el => el.dataset.color);
+            const srcIdx = currentOrder.indexOf(_dragSrc);
+            const dstIdx = currentOrder.indexOf(targetKey);
+            if (srcIdx === -1 || dstIdx === -1) return;
+
+            const mode = getDropMode(e, item);
+            if (mode === 'swap') {
+                // Exchange positions
+                [currentOrder[srcIdx], currentOrder[dstIdx]] = [currentOrder[dstIdx], currentOrder[srcIdx]];
+            } else {
+                // Insert before or after target
+                const insertIdx = mode === 'insert-after' ? dstIdx + 1 : dstIdx;
+                currentOrder.splice(srcIdx, 1);
+                const adjustedIdx = srcIdx < insertIdx ? insertIdx - 1 : insertIdx;
+                currentOrder.splice(adjustedIdx, 0, _dragSrc);
+            }
+
+            state[orderStateKey] = currentOrder;
+            rerender();
+        });
+    });
 }
 
 function createColorElement(colorKey, colorData) {
@@ -220,6 +321,7 @@ export async function loadPaletteSourceImage(file) {
         const data = imageData.data;
 
         state.sourcePaletteColors.clear();
+        state.sourcePaletteOrder = null; // Reset to default spectrum sort
         for (let i = 0; i < data.length; i += 4) {
             const r = data[i];
             const g = data[i + 1];
@@ -256,7 +358,10 @@ function updatePaletteSourceUI(img, fileName) {
 
 export function renderSourcePalette() {
     elements.sourcePaletteGrid.innerHTML = '';
-    const sortedColors = [...state.sourcePaletteColors.entries()].sort((a, b) => b[1].count - a[1].count);
+    const sortedColors = getOrderedPaletteColors(
+        state.sourcePaletteColors,
+        state.sourcePaletteOrder
+    );
 
     for (const [colorKey, colorData] of sortedColors) {
         const div = document.createElement('div');
@@ -268,6 +373,8 @@ export function renderSourcePalette() {
         div.addEventListener('click', () => selectSourceColor(colorKey, div));
         elements.sourcePaletteGrid.appendChild(div);
     }
+
+    addDragReorder(elements.sourcePaletteGrid, '.source-color-item', 'sourcePaletteOrder', renderSourcePalette);
 }
 
 function selectSourceColor(colorKey, element) {
