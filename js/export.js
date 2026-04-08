@@ -155,7 +155,35 @@ function applyEditEntry(entry) {
         return applyTransparencyCleanupEntryToFrames(entry);
     }
 
+    if (entry.type === 'solidify_transparent') {
+        return applySolidifyTransparentEntryToFrames(entry);
+    }
+
     return false;
+}
+
+function applySolidifyTransparentEntryToFrames(entry) {
+    const selectedSet = entry.hasSelection && entry.selectedIndices
+        ? new Set(entry.selectedIndices)
+        : null;
+    const thresholdAlpha = entry.thresholdAlpha ?? Math.round((entry.thresholdPercent / 100) * 255);
+
+    let changed = false;
+
+    for (const frameData of state.currentFrames) {
+        for (let i = 0; i < frameData.length; i += 4) {
+            const pixelIndex = i / 4;
+            if (selectedSet && !selectedSet.has(pixelIndex)) continue;
+
+            const alpha = frameData[i + 3];
+            if (alpha > 0 && alpha < thresholdAlpha) {
+                frameData[i + 3] = 255;
+                changed = true;
+            }
+        }
+    }
+
+    return changed;
 }
 
 export function exportCurrentFrame() {

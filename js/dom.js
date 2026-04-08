@@ -50,6 +50,7 @@ export const elements = {
     clearSelectionBtn: document.getElementById('clearSelectionBtn'),
     transparencyThresholdInput: document.getElementById('transparencyThresholdInput'),
     deleteTransparentBtn: document.getElementById('deleteTransparentBtn'),
+    solidifyTransparentBtn: document.getElementById('solidifyTransparentBtn'),
     cropToAssetBtn: document.getElementById('cropToAssetBtn'),
     transparencyStatus: document.getElementById('transparencyStatus'),
 

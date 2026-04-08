@@ -328,6 +328,10 @@ function initializeTransparencyControls() {
         applyTransparencyCleanup(state.transparencyThreshold);
     });
 
+    elements.solidifyTransparentBtn.addEventListener('click', () => {
+        applySolidifyTransparentPixels(state.transparencyThreshold);
+    });
+
     elements.cropToAssetBtn.addEventListener('click', () => {
         applyCropToAssetBounds();
     });
@@ -666,6 +670,8 @@ function rebuildFramesFromHistory() {
             applyCropTransparentBorderEntryToFrames(entry);
         } else if (entry.type === 'transparency_cleanup') {
             applyTransparencyCleanupEntryToFrames(entry);
+        } else if (entry.type === 'solidify_transparent') {
+            applySolidifyTransparentEntryToFrames(entry);
         }
     }
 }
@@ -1430,6 +1436,87 @@ function applyTransparencyCleanup(targetValue) {
         `Deleted ${changedPixels} pixels below ${thresholdPercent}% opacity.`,
         'success'
     );
+}
+
+function applySolidifyTransparentPixels(targetValue) {
+    if (state.currentFrames.length === 0) {
+        setTransparencyStatus('Load an image before solidifying transparent pixels.', 'error');
+        return;
+    }
+
+    const thresholdPercent = clampTransparencyThreshold(targetValue);
+    state.transparencyThreshold = thresholdPercent;
+    elements.transparencyThresholdInput.value = thresholdPercent;
+
+    const thresholdAlpha = Math.round((thresholdPercent / 100) * 255);
+    const selectionContext = getSelectionContext();
+    let changedPixels = 0;
+    let affectedPixelCount = 0;
+
+    for (const frameData of state.currentFrames) {
+        for (let i = 0; i < frameData.length; i += 4) {
+            const pixelIndex = i / 4;
+            if (selectionContext.hasSelection && !selectionContext.selectedSet.has(pixelIndex)) continue;
+
+            affectedPixelCount++;
+            const alpha = frameData[i + 3];
+            if (alpha > 0 && alpha < thresholdAlpha) {
+                frameData[i + 3] = 255;
+                changedPixels++;
+            }
+        }
+    }
+
+    if (changedPixels === 0) {
+        setTransparencyStatus(
+            `No pixels found below ${thresholdPercent}% opacity in the current scope.`,
+            'neutral'
+        );
+        return;
+    }
+
+    const solidifyEntry = {
+        type: 'solidify_transparent',
+        thresholdPercent,
+        thresholdAlpha,
+        hasSelection: selectionContext.hasSelection,
+        affectedPixelCount,
+        changedPixelCount: changedPixels
+    };
+
+    if (selectionContext.hasSelection) {
+        solidifyEntry.selectedIndices = selectionContext.selectedIndices;
+    }
+
+    pushEditHistoryEntry(solidifyEntry);
+    extractPalette();
+    renderCurrentFrame();
+    renderSelectionOverlay();
+    updateSwapHistoryDisplay();
+    clearColorSelectionState();
+    setTransparencyStatus(
+        `Solidified ${changedPixels} pixels below ${thresholdPercent}% opacity.`,
+        'success'
+    );
+}
+
+function applySolidifyTransparentEntryToFrames(entry) {
+    const selectedSet = entry.hasSelection && entry.selectedIndices
+        ? new Set(entry.selectedIndices)
+        : null;
+    const thresholdAlpha = entry.thresholdAlpha ?? Math.round((entry.thresholdPercent / 100) * 255);
+
+    for (const frameData of state.currentFrames) {
+        for (let i = 0; i < frameData.length; i += 4) {
+            const pixelIndex = i / 4;
+            if (selectedSet && !selectedSet.has(pixelIndex)) continue;
+
+            const alpha = frameData[i + 3];
+            if (alpha > 0 && alpha < thresholdAlpha) {
+                frameData[i + 3] = 255;
+            }
+        }
+    }
 }
 
 function applyCropToAssetBounds() {
