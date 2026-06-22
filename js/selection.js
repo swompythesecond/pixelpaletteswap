@@ -19,7 +19,12 @@ export function selectTool(tool) {
     } else if (tool === 'eraser') {
         elements.toolEraserBtn.classList.add('active');
         elements.previewCanvas.style.cursor = 'crosshair';
+    } else if (tool === 'magicEraser') {
+        elements.toolMagicEraserBtn.classList.add('active');
+        elements.previewCanvas.style.cursor = 'crosshair';
     }
+
+    elements.magicEraserControls.classList.toggle('hidden', tool !== 'magicEraser');
 
     state.isPainting = false;
     state.activePaintTool = null;
@@ -51,6 +56,8 @@ export function updateSelectionInfo() {
             elements.selectionInfo.textContent = 'Click and drag to draw 1x1 pixels with the selected color';
         } else if (state.currentTool === 'eraser') {
             elements.selectionInfo.textContent = 'Click and drag to erase 1x1 pixels to transparency';
+        } else if (state.currentTool === 'magicEraser') {
+            elements.selectionInfo.textContent = 'Click a background area to erase all connected pixels of a similar color';
         }
     } else {
         const selectedCount = state.selectionMask.filter(v => v === 1).length;

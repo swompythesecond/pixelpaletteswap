@@ -672,6 +672,8 @@ function rebuildFramesFromHistory() {
             applyTransparencyCleanupEntryToFrames(entry);
         } else if (entry.type === 'solidify_transparent') {
             applySolidifyTransparentEntryToFrames(entry);
+        } else if (entry.type === 'magic_erase') {
+            applyMagicEraseEntryToFrames(entry);
         }
     }
 }
@@ -731,6 +733,12 @@ elements.toolRectBtn.addEventListener('click', () => selectTool('rect'));
 elements.toolPolyBtn.addEventListener('click', () => selectTool('poly'));
 elements.toolPencilBtn.addEventListener('click', () => selectTool('pencil'));
 elements.toolEraserBtn.addEventListener('click', () => selectTool('eraser'));
+elements.toolMagicEraserBtn.addEventListener('click', () => selectTool('magicEraser'));
+elements.magicEraseToleranceInput.addEventListener('change', (e) => {
+    const tolerance = clampMagicEraseTolerance(e.target.value);
+    state.magicEraseTolerance = tolerance;
+    e.target.value = tolerance;
+});
 elements.invertSelectionBtn.addEventListener('click', invertSelection);
 elements.clearSelectionBtn.addEventListener('click', clearSelection);
 
@@ -983,6 +991,8 @@ elements.previewCanvas.addEventListener('mousedown', (e) => {
         updateSelectionInfo();
     } else if (state.currentTool === 'pencil' || state.currentTool === 'eraser') {
         beginPaintStroke(pixel);
+    } else if (state.currentTool === 'magicEraser') {
+        performMagicErase(pixel);
     }
 });
 
@@ -1066,6 +1076,10 @@ document.addEventListener('keydown', (e) => {
         }
         if (key === 'e') {
             selectTool('eraser');
+            return;
+        }
+        if (key === 'm') {
+            selectTool('magicEraser');
             return;
         }
         if (key === 's') {
@@ -1519,6 +1533,160 @@ function applySolidifyTransparentEntryToFrames(entry) {
     }
 }
 
+function clampMagicEraseTolerance(value) {
+    const parsed = parseInt(value, 10);
+    if (Number.isNaN(parsed)) return state.magicEraseTolerance;
+    return Math.max(0, Math.min(100, parsed));
+}
+
+// Map the 0-100 tolerance to a squared RGB euclidean distance (max distance ~= 442).
+function magicEraseToleranceToDistSq(tolerance) {
+    const maxDist = (tolerance / 100) * 442;
+    return maxDist * maxDist;
+}
+
+// Flood-fill the contiguous region of similar-colored pixels around (seedX, seedY)
+// on a single frame and erase them to transparent. Returns the number of erased pixels.
+// Frames where the seed pixel no longer matches the reference color are left untouched,
+// so a moving sprite covering the seed spot in some frames won't be erased.
+function floodFillEraseFrame(frameData, width, height, seedX, seedY, refColor, tolerance, selectedSet) {
+    const total = width * height;
+    const seedIndex = seedY * width + seedX;
+    if (seedIndex < 0 || seedIndex >= total) return 0;
+
+    const tolSq = magicEraseToleranceToDistSq(tolerance);
+
+    const seedMatches = () => {
+        const si = seedIndex * 4;
+        if (frameData[si + 3] === 0) return false;
+        const dr = frameData[si] - refColor.r;
+        const dg = frameData[si + 1] - refColor.g;
+        const db = frameData[si + 2] - refColor.b;
+        return dr * dr + dg * dg + db * db <= tolSq;
+    };
+    if (!seedMatches()) return 0;
+
+    const visited = new Uint8Array(total);
+    const stack = [seedIndex];
+    let changed = 0;
+
+    while (stack.length) {
+        const idx = stack.pop();
+        if (visited[idx]) continue;
+        visited[idx] = 1;
+
+        if (selectedSet && !selectedSet.has(idx)) continue;
+
+        const i = idx * 4;
+        if (frameData[i + 3] === 0) continue;
+
+        const dr = frameData[i] - refColor.r;
+        const dg = frameData[i + 1] - refColor.g;
+        const db = frameData[i + 2] - refColor.b;
+        if (dr * dr + dg * dg + db * db > tolSq) continue;
+
+        frameData[i] = 0;
+        frameData[i + 1] = 0;
+        frameData[i + 2] = 0;
+        frameData[i + 3] = 0;
+        changed++;
+
+        const x = idx % width;
+        const y = (idx - x) / width;
+        if (x > 0) stack.push(idx - 1);
+        if (x < width - 1) stack.push(idx + 1);
+        if (y > 0) stack.push(idx - width);
+        if (y < height - 1) stack.push(idx + width);
+    }
+
+    return changed;
+}
+
+function performMagicErase(seedPixel) {
+    if (state.currentFrames.length === 0) return;
+
+    stopAnimation();
+
+    const width = state.gifWidth;
+    const height = state.gifHeight;
+    const seedX = seedPixel.x;
+    const seedY = seedPixel.y;
+
+    const currentFrame = state.currentFrames[state.currentFrameIndex];
+    const seedDataIndex = (seedY * width + seedX) * 4;
+    const refColor = {
+        r: currentFrame[seedDataIndex],
+        g: currentFrame[seedDataIndex + 1],
+        b: currentFrame[seedDataIndex + 2]
+    };
+
+    if (currentFrame[seedDataIndex + 3] === 0) {
+        setTransparencyStatus('That spot is already transparent.', 'neutral');
+        return;
+    }
+
+    const tolerance = clampMagicEraseTolerance(elements.magicEraseToleranceInput.value);
+    state.magicEraseTolerance = tolerance;
+    elements.magicEraseToleranceInput.value = tolerance;
+
+    const selectionContext = getSelectionContext();
+    const selectedSet = selectionContext.hasSelection ? selectionContext.selectedSet : null;
+
+    let changedPixels = 0;
+    for (const frameData of state.currentFrames) {
+        changedPixels += floodFillEraseFrame(frameData, width, height, seedX, seedY, refColor, tolerance, selectedSet);
+    }
+
+    if (changedPixels === 0) {
+        setTransparencyStatus('No matching background pixels found at that spot.', 'neutral');
+        return;
+    }
+
+    const magicEraseEntry = {
+        type: 'magic_erase',
+        seedX,
+        seedY,
+        tolerance,
+        referenceColor: refColor,
+        hasSelection: selectionContext.hasSelection,
+        changedPixelCount: changedPixels
+    };
+
+    if (selectionContext.hasSelection) {
+        magicEraseEntry.selectedIndices = selectionContext.selectedIndices;
+    }
+
+    pushEditHistoryEntry(magicEraseEntry);
+    extractPalette();
+    renderCurrentFrame();
+    renderSelectionOverlay();
+    updateSwapHistoryDisplay();
+    clearColorSelectionState();
+    setTransparencyStatus(`Magic eraser removed ${changedPixels} pixels.`, 'success');
+}
+
+function applyMagicEraseEntryToFrames(entry) {
+    const refColor = entry.referenceColor;
+    if (!refColor) return;
+
+    const selectedSet = entry.hasSelection && entry.selectedIndices
+        ? new Set(entry.selectedIndices)
+        : null;
+
+    for (const frameData of state.currentFrames) {
+        floodFillEraseFrame(
+            frameData,
+            state.gifWidth,
+            state.gifHeight,
+            entry.seedX,
+            entry.seedY,
+            refColor,
+            entry.tolerance,
+            selectedSet
+        );
+    }
+}
+
 function applyCropToAssetBounds() {
     if (state.currentFrames.length === 0) {
         setTransparencyStatus('Load an image before cropping.', 'error');
@@ -1770,6 +1938,15 @@ function updateSwapHistoryDisplay() {
                 <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #6bc5ff;">C</span>
                 <span style="color: #666; flex: 1;">Crop border ${entry.fromWidth}x${entry.fromHeight} -> ${entry.toWidth}x${entry.toHeight}</span>
                 <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this crop">x</button>
+            </div>`;
+        }
+
+        if (entry.type === 'magic_erase') {
+            const scopeText = entry.hasSelection ? 'selection' : 'all frames';
+            return `<div style="display: flex; align-items: center; gap: 5px; margin: 3px 0;">
+                <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #6bc5ff;">M</span>
+                <span style="color: #666; flex: 1;">Magic erase ${entry.changedPixelCount} px (${scopeText})</span>
+                <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this magic erase">x</button>
             </div>`;
         }
 

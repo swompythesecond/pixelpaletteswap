@@ -565,6 +565,41 @@ button:disabled {
     color: #888;
 }
 
+.magic-eraser-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.magic-eraser-controls label {
+    font-size: 11px;
+    color: #888;
+}
+
+.magic-eraser-controls input[type="number"] {
+    width: 64px;
+    padding: 5px 6px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 11px;
+    text-align: center;
+}
+
+.magic-eraser-controls input[type="number"]:focus {
+    outline: none;
+    border-color: #6bc5ff;
+}
+
+.magic-eraser-hint {
+    flex: 1 1 100%;
+    font-size: 11px;
+    color: #666;
+}
+
 .history-actions {
     display: flex;
     gap: 8px;

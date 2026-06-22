@@ -159,7 +159,80 @@ function applyEditEntry(entry) {
         return applySolidifyTransparentEntryToFrames(entry);
     }
 
+    if (entry.type === 'magic_erase') {
+        return applyMagicEraseEntryToFrames(entry);
+    }
+
     return false;
+}
+
+function floodFillEraseFrame(frameData, width, height, seedX, seedY, refColor, tolerance, selectedSet) {
+    const total = width * height;
+    const seedIndex = seedY * width + seedX;
+    if (seedIndex < 0 || seedIndex >= total) return 0;
+
+    const maxDist = (tolerance / 100) * 442;
+    const tolSq = maxDist * maxDist;
+
+    const si = seedIndex * 4;
+    if (frameData[si + 3] === 0) return 0;
+    const sdr = frameData[si] - refColor.r;
+    const sdg = frameData[si + 1] - refColor.g;
+    const sdb = frameData[si + 2] - refColor.b;
+    if (sdr * sdr + sdg * sdg + sdb * sdb > tolSq) return 0;
+
+    const visited = new Uint8Array(total);
+    const stack = [seedIndex];
+    let changed = 0;
+
+    while (stack.length) {
+        const idx = stack.pop();
+        if (visited[idx]) continue;
+        visited[idx] = 1;
+
+        if (selectedSet && !selectedSet.has(idx)) continue;
+
+        const i = idx * 4;
+        if (frameData[i + 3] === 0) continue;
+
+        const dr = frameData[i] - refColor.r;
+        const dg = frameData[i + 1] - refColor.g;
+        const db = frameData[i + 2] - refColor.b;
+        if (dr * dr + dg * dg + db * db > tolSq) continue;
+
+        frameData[i] = 0;
+        frameData[i + 1] = 0;
+        frameData[i + 2] = 0;
+        frameData[i + 3] = 0;
+        changed++;
+
+        const x = idx % width;
+        const y = (idx - x) / width;
+        if (x > 0) stack.push(idx - 1);
+        if (x < width - 1) stack.push(idx + 1);
+        if (y > 0) stack.push(idx - width);
+        if (y < height - 1) stack.push(idx + width);
+    }
+
+    return changed;
+}
+
+function applyMagicEraseEntryToFrames(entry) {
+    const refColor = entry.referenceColor;
+    if (!refColor) return false;
+
+    const selectedSet = entry.hasSelection && entry.selectedIndices
+        ? new Set(entry.selectedIndices)
+        : null;
+
+    let changed = false;
+    for (const frameData of state.currentFrames) {
+        if (floodFillEraseFrame(frameData, state.gifWidth, state.gifHeight, entry.seedX, entry.seedY, refColor, entry.tolerance, selectedSet) > 0) {
+            changed = true;
+        }
+    }
+
+    return changed;
 }
 
 function applySolidifyTransparentEntryToFrames(entry) {

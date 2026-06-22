@@ -158,6 +158,14 @@
                         <button class="tool-btn" id="toolPencil"
                             title="Draw 1x1 pixels using the selected color">✏️ Pencil</button>
                         <button class="tool-btn" id="toolEraser" title="Erase 1x1 pixels to transparency">🩹 Eraser</button>
+                        <button class="tool-btn" id="toolMagicEraser"
+                            title="Click a background area to erase all connected pixels of a similar color">🪄 Magic Eraser</button>
+                    </div>
+                    <div class="magic-eraser-controls hidden" id="magicEraserControls">
+                        <label for="magicEraseToleranceInput">Tolerance:</label>
+                        <input type="number" id="magicEraseToleranceInput" min="0" max="100" value="12">
+                        <span class="magic-eraser-hint">Higher removes more similar shades. Click the background in the
+                            image to erase it across all frames.</span>
                     </div>
                     <div class="selection-info" id="selectionInfo">No selection - color swaps will apply to entire image
                     </div>

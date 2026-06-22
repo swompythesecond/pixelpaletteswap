@@ -34,8 +34,10 @@ export const state = {
     transparencyThresholdMin: 0,
     transparencyThresholdMax: 100,
 
+    magicEraseTolerance: 12, // Color match tolerance for the magic eraser (0-100)
+
     // Selection tool state
-    currentTool: 'none', // 'none', 'rect', 'poly', 'pencil', 'eraser'
+    currentTool: 'none', // 'none', 'rect', 'poly', 'pencil', 'eraser', 'magicEraser'
     selectionMask: null, // Uint8Array matching image pixels, 1 = selected, 0 = not
     isDrawingSelection: false,
     selectionStart: { x: 0, y: 0 },
