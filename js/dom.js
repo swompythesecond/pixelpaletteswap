@@ -34,6 +34,8 @@ export const elements = {
     paletteSourceContent: document.getElementById('paletteSourceContent'),
     sourcePaletteContainer: document.getElementById('sourcePaletteContainer'),
     sourcePaletteGrid: document.getElementById('sourcePaletteGrid'),
+    syncToSourceBtn: document.getElementById('syncToSourceBtn'),
+    syncStatus: document.getElementById('syncStatus'),
     clearPaletteSourceBtn: document.getElementById('clearPaletteSourceBtn'),
     newColorHex: document.getElementById('newColorHex'),
     projectNameInput: document.getElementById('projectNameInput'),

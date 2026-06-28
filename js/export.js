@@ -143,6 +143,10 @@ function applyEditEntry(entry) {
         return applyReductionEntryToFrames(entry);
     }
 
+    if (entry.type === 'color_sync' && entry.colorMap) {
+        return applyReductionEntryToFrames(entry);
+    }
+
     if (entry.type === 'paint') {
         return applyPaintEntryToFrames(entry);
     }
@@ -340,6 +344,7 @@ export function exportPreset() {
     const exportedEdits = state.editHistory.filter((entry) => (
         entry.type === 'swap' ||
         entry.type === 'reduction' ||
+        entry.type === 'color_sync' ||
         entry.type === 'paint' ||
         entry.type === 'resize' ||
         entry.type === 'transparency_cleanup'

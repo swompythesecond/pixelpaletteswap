@@ -50,6 +50,7 @@ initializeTransparencyControls();
 setReduceStatus('');
 setResizeStatus('');
 setTransparencyStatus('');
+setSyncStatus('');
 updateSwapHistoryDisplay();
 
 let resizeAspectDriver = 'width';
@@ -120,6 +121,19 @@ function setReduceStatus(message, tone = 'neutral') {
         elements.reduceStatus.style.color = '#4caf50';
     } else {
         elements.reduceStatus.style.color = '#888';
+    }
+}
+
+function setSyncStatus(message, tone = 'neutral') {
+    if (!elements.syncStatus) return;
+    elements.syncStatus.textContent = message;
+
+    if (tone === 'error') {
+        elements.syncStatus.style.color = '#ff6b6b';
+    } else if (tone === 'success') {
+        elements.syncStatus.style.color = '#4caf50';
+    } else {
+        elements.syncStatus.style.color = '#888';
     }
 }
 
@@ -662,6 +676,8 @@ function rebuildFramesFromHistory() {
             state.colorSwapHistory.push(entry.swap);
         } else if (entry.type === 'reduction') {
             applyReductionEntryToFrames(entry);
+        } else if (entry.type === 'color_sync') {
+            applyReductionEntryToFrames(entry);
         } else if (entry.type === 'paint') {
             applyPaintEntryToFrames(entry);
         } else if (entry.type === 'resize') {
@@ -925,6 +941,7 @@ document.addEventListener('mouseup', () => {
 
 elements.paletteSourceUpload.addEventListener('click', () => elements.paletteSourceInput.click());
 elements.paletteSourceInput.addEventListener('change', handlePaletteSourceUpload);
+elements.syncToSourceBtn.addEventListener('click', applyColorSyncToSourcePalette);
 elements.clearPaletteSourceBtn.addEventListener('click', clearPaletteSource);
 
 elements.paletteSourceUpload.addEventListener('dragover', (e) => {
@@ -1383,6 +1400,120 @@ function applyColorReduction(targetValue) {
     setTransparencyStatus('');
     setReduceStatus(
         `Reduced ${fromColorCount} -> ${reductionEntry.toColorCount} colors (${changedPixels} pixels changed).`,
+        'success'
+    );
+}
+
+function applyColorSyncToSourcePalette() {
+    if (state.currentFrames.length === 0) {
+        setSyncStatus('Load an image before matching colors.', 'error');
+        return;
+    }
+
+    if (state.sourcePaletteColors.size === 0) {
+        setSyncStatus('Upload a palette image first.', 'error');
+        return;
+    }
+
+    stopAnimation();
+
+    // Precompute LAB for each color in the uploaded reference palette.
+    const targets = [...state.sourcePaletteColors.values()].map((c) => ({
+        r: c.r,
+        g: c.g,
+        b: c.b,
+        lab: rgbToLab(c.r, c.g, c.b)
+    }));
+
+    const selectionContext = getSelectionContext();
+
+    // Collect the unique opaque colors currently in scope.
+    const scopedColors = new Set();
+    for (const frameData of state.currentFrames) {
+        for (let i = 0; i < frameData.length; i += 4) {
+            const pixelIndex = i / 4;
+            if (selectionContext.hasSelection && !selectionContext.selectedSet.has(pixelIndex)) continue;
+            if (frameData[i + 3] === 0) continue;
+            scopedColors.add(`${frameData[i]},${frameData[i + 1]},${frameData[i + 2]}`);
+        }
+    }
+
+    if (scopedColors.size === 0) {
+        setSyncStatus('No opaque pixels found in the current scope.', 'error');
+        return;
+    }
+
+    // Map each source color to its closest palette match (perceptual LAB distance).
+    const colorMap = {};
+    let remappedColorCount = 0;
+    for (const colorKey of scopedColors) {
+        const [r, g, b] = colorKey.split(',').map(Number);
+        const lab = rgbToLab(r, g, b);
+
+        let best = targets[0];
+        let bestDist = Infinity;
+        for (const target of targets) {
+            const dL = lab.L - target.lab.L;
+            const dA = lab.a - target.lab.a;
+            const dB = lab.b - target.lab.b;
+            const dist = dL * dL + dA * dA + dB * dB;
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = target;
+            }
+        }
+
+        colorMap[colorKey] = { r: best.r, g: best.g, b: best.b };
+        if (best.r !== r || best.g !== g || best.b !== b) remappedColorCount++;
+    }
+
+    // Apply the mapping to every frame within scope.
+    let changedPixels = 0;
+    for (const frameData of state.currentFrames) {
+        for (let i = 0; i < frameData.length; i += 4) {
+            const pixelIndex = i / 4;
+            if (selectionContext.hasSelection && !selectionContext.selectedSet.has(pixelIndex)) continue;
+            if (frameData[i + 3] === 0) continue;
+
+            const mapped = colorMap[`${frameData[i]},${frameData[i + 1]},${frameData[i + 2]}`];
+            if (!mapped) continue;
+
+            if (mapped.r !== frameData[i] || mapped.g !== frameData[i + 1] || mapped.b !== frameData[i + 2]) {
+                frameData[i] = mapped.r;
+                frameData[i + 1] = mapped.g;
+                frameData[i + 2] = mapped.b;
+                changedPixels++;
+            }
+        }
+    }
+
+    if (changedPixels === 0) {
+        setSyncStatus('Colors already match the palette — nothing changed.', 'neutral');
+        return;
+    }
+
+    const syncEntry = {
+        type: 'color_sync',
+        colorMap,
+        hasSelection: selectionContext.hasSelection,
+        sourceColorCount: targets.length,
+        fromColorCount: scopedColors.size,
+        remappedColorCount,
+        changedPixelCount: changedPixels
+    };
+
+    if (selectionContext.hasSelection) {
+        syncEntry.selectedIndices = selectionContext.selectedIndices;
+    }
+
+    pushEditHistoryEntry(syncEntry);
+    extractPalette();
+    renderCurrentFrame();
+    renderSelectionOverlay();
+    updateSwapHistoryDisplay();
+    clearColorSelectionState();
+    setSyncStatus(
+        `Matched ${remappedColorCount} of ${scopedColors.size} colors (${changedPixels} pixels changed).`,
         'success'
     );
 }
@@ -1912,6 +2043,15 @@ function updateSwapHistoryDisplay() {
                 <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #4caf50;">Q</span>
                 <span style="color: #666; flex: 1;">Reduce to ${entry.targetCount} colors (${scopeText})</span>
                 <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this reduction">x</button>
+            </div>`;
+        }
+
+        if (entry.type === 'color_sync') {
+            const scopeText = entry.hasSelection ? 'selection' : 'full image';
+            return `<div style="display: flex; align-items: center; gap: 5px; margin: 3px 0;">
+                <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #4caf50;">S</span>
+                <span style="color: #666; flex: 1;">Match to palette: ${entry.remappedColorCount} colors (${scopeText})</span>
+                <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this palette match">x</button>
             </div>`;
         }
 
