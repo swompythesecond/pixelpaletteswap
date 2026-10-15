@@ -939,6 +939,24 @@ button:disabled {
     accent-color: #6bc5ff;
 }
 
+.pixel-grid-settings {
+    margin: 10px 0 14px;
+    padding: 10px;
+    border: 1px solid #444;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.pixel-grid-settings h4 {
+    margin: 0 0 4px;
+    font-size: 13px;
+    color: #ddd;
+}
+
+.pixel-grid-settings .resize-status {
+    margin-bottom: 8px;
+}
+
 .resize-status {
     margin: 8px 0 0;
     min-height: 16px;

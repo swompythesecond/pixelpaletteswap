@@ -308,6 +308,18 @@
                     <h3>Resize Image</h3>
                     <p class="resize-hint">Scale the whole image/animation with nearest-neighbor pixel resizing.</p>
 
+                    <div class="pixel-grid-settings">
+                        <h4>Downscale to True Pixel Art</h4>
+                        <p class="resize-hint">For AI-generated or upscaled pixel art: detects how many image pixels make up one real pixel and shrinks it back.</p>
+                        <button id="detectPixelGridBtn" type="button" style="width: 100%;">Detect Pixel Size</button>
+                        <div class="resize-controls resize-pixels-row">
+                            <label for="pixelGridSizeInput">Pixel size (px):</label>
+                            <input type="number" id="pixelGridSizeInput" min="1" max="256" step="0.01" value="1">
+                        </div>
+                        <p id="pixelGridInfo" class="resize-status"></p>
+                        <button id="applyPixelGridBtn" type="button" style="width: 100%;">Downscale to True Size</button>
+                    </div>
+
                     <div class="resize-mode-toggle">
                         <button class="resize-mode-btn active" id="resizeModePixelsBtn" type="button">Pixels (px)</button>
                         <button class="resize-mode-btn" id="resizeModePercentBtn" type="button">Percent (%)</button>

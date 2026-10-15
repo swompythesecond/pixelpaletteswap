@@ -7,7 +7,12 @@ import {
     quantizeColorsLabWeighted,
     resizeFramesNearestNeighbor,
     getOpaqueBoundsAcrossFrames,
-    cropFramesToBounds
+    cropFramesToBounds,
+    computeEdgeProfiles,
+    detectPixelGrid,
+    getGridOffset,
+    getPixelGridLayout,
+    downscaleFramesByGrid
 } from './js/utils.js';
 import { 
     selectTool, 
@@ -46,6 +51,7 @@ import {
 startMarchingAnts();
 initializeReduceControls();
 initializeResizeControls();
+initializePixelGridControls();
 initializeTransparencyControls();
 setReduceStatus('');
 setResizeStatus('');
@@ -54,6 +60,8 @@ setSyncStatus('');
 updateSwapHistoryDisplay();
 
 let resizeAspectDriver = 'width';
+// Edge profiles of the frame the pixel grid was last measured on, reused when the size is edited.
+let pixelGridCache = null;
 
 function initializeReduceControls() {
     elements.reduceColorInput.value = state.reduceColorTarget;
@@ -253,6 +261,139 @@ function initializeResizeControls() {
     });
 
     syncResizeInputsFromCurrentSize();
+}
+
+function initializePixelGridControls() {
+    elements.detectPixelGridBtn.addEventListener('click', () => {
+        if (state.currentFrames.length === 0) {
+            setPixelGridInfo('Load an image first.', 'error');
+            return;
+        }
+        setPixelGridInfo('Detecting...');
+        // Let the status paint before the (sub-second) analysis blocks the thread.
+        setTimeout(runPixelGridDetection, 20);
+    });
+
+    elements.pixelGridSizeInput.addEventListener('input', () => {
+        const cellSize = parseFloat(elements.pixelGridSizeInput.value);
+        if (cellSize > 1 && cellSize <= 256) updatePixelGridPreview(cellSize);
+    });
+
+    elements.applyPixelGridBtn.addEventListener('click', () => {
+        applyPixelGridDownscale();
+    });
+}
+
+function getPixelGridProfiles() {
+    const frame = state.currentFrames[0];
+    if (!pixelGridCache || pixelGridCache.frame !== frame) {
+        pixelGridCache = {
+            frame,
+            profiles: computeEdgeProfiles(frame, state.gifWidth, state.gifHeight)
+        };
+    }
+    return pixelGridCache.profiles;
+}
+
+function runPixelGridDetection() {
+    if (state.currentFrames.length === 0) return;
+    const profiles = getPixelGridProfiles();
+    const grid = detectPixelGrid(state.currentFrames[0], state.gifWidth, state.gifHeight, profiles);
+
+    if (!grid) {
+        setPixelGridInfo('Image is too small to detect a pixel grid.', 'error');
+        return;
+    }
+
+    const cellSize = Math.round(grid.cellSize * 100) / 100;
+    elements.pixelGridSizeInput.value = cellSize;
+    updatePixelGridPreview(cellSize, grid.confidence < 0.3
+        ? 'No clear pixel grid found, guess may be wrong:'
+        : 'Detected:');
+}
+
+function getPixelGridPlan(cellSize) {
+    const profiles = getPixelGridProfiles();
+    const offsetX = getGridOffset(profiles.profileX, cellSize);
+    const offsetY = getGridOffset(profiles.profileY, cellSize);
+    return {
+        cellSize,
+        ...getPixelGridLayout(state.gifWidth, state.gifHeight, cellSize, offsetX, offsetY)
+    };
+}
+
+function updatePixelGridPreview(cellSize, prefix = '') {
+    if (state.currentFrames.length === 0) return;
+    const plan = getPixelGridPlan(cellSize);
+    const message = `${state.gifWidth}x${state.gifHeight} -> ${plan.toWidth}x${plan.toHeight}`;
+    const isWarning = prefix.startsWith('No clear');
+    setPixelGridInfo(prefix ? `${prefix} ${message}` : message, isWarning ? 'error' : 'success');
+}
+
+function setPixelGridInfo(message, tone = 'neutral') {
+    elements.pixelGridInfo.textContent = message;
+
+    if (tone === 'error') {
+        elements.pixelGridInfo.style.color = '#ff6b6b';
+    } else if (tone === 'success') {
+        elements.pixelGridInfo.style.color = '#6bc5ff';
+    } else {
+        elements.pixelGridInfo.style.color = '#888';
+    }
+}
+
+function applyPixelGridDownscale() {
+    if (state.currentFrames.length === 0) {
+        setPixelGridInfo('Load an image first.', 'error');
+        return;
+    }
+
+    const cellSize = parseFloat(elements.pixelGridSizeInput.value);
+    if (!(cellSize > 1) || cellSize > 256) {
+        setPixelGridInfo('Pixel size must be above 1 and at most 256. Try Detect Pixel Size.', 'error');
+        return;
+    }
+
+    const fromWidth = state.gifWidth;
+    const fromHeight = state.gifHeight;
+    const entry = {
+        type: 'pixel_grid_downscale',
+        fromWidth,
+        fromHeight,
+        ...getPixelGridPlan(cellSize)
+    };
+
+    const wasPlaying = state.isPlaying;
+    stopAnimation();
+
+    applyPixelGridEntryToFrames(entry);
+
+    state.selectionMask = null;
+    state.polygonPoints = [];
+    state.tempPolygonPoint = null;
+    state.isDrawingSelection = false;
+    state.isPainting = false;
+    state.activePaintTool = null;
+    state.strokeSelectionSet = null;
+    state.strokePixelMap.clear();
+
+    pushEditHistoryEntry(entry);
+
+    updateCanvasSize();
+    extractPalette();
+    renderCurrentFrame();
+    renderSelectionOverlay();
+    syncResizeInputsFromCurrentSize();
+    updateSelectionInfo();
+    updateSwapHistoryDisplay();
+    clearColorSelectionState();
+    setResizeStatus('');
+    setTransparencyStatus('');
+    setPixelGridInfo(`Downscaled ${fromWidth}x${fromHeight} -> ${entry.toWidth}x${entry.toHeight} (pixel size ${cellSize}).`, 'success');
+
+    if (wasPlaying && state.currentFrames.length > 1) {
+        startAnimation();
+    }
 }
 
 function clampResizePercent(value) {
@@ -605,6 +746,23 @@ function applyResizeEntryToFrames(resizeEntry) {
     state.gifHeight = toHeight;
 }
 
+function applyPixelGridEntryToFrames(entry) {
+    if (!(entry.cellSize > 0) || !(entry.toWidth >= 1) || !(entry.toHeight >= 1)) return;
+
+    state.currentFrames = downscaleFramesByGrid(
+        state.currentFrames,
+        entry.fromWidth,
+        entry.fromHeight,
+        entry.cellSize,
+        entry.startX,
+        entry.startY,
+        entry.toWidth,
+        entry.toHeight
+    );
+    state.gifWidth = entry.toWidth;
+    state.gifHeight = entry.toHeight;
+}
+
 function applyCropTransparentBorderEntryToFrames(cropEntry) {
     const fromWidth = cropEntry.fromWidth || state.gifWidth;
     const fromHeight = cropEntry.fromHeight || state.gifHeight;
@@ -682,6 +840,8 @@ function rebuildFramesFromHistory() {
             applyPaintEntryToFrames(entry);
         } else if (entry.type === 'resize') {
             applyResizeEntryToFrames(entry);
+        } else if (entry.type === 'pixel_grid_downscale') {
+            applyPixelGridEntryToFrames(entry);
         } else if (entry.type === 'crop_transparent_border') {
             applyCropTransparentBorderEntryToFrames(entry);
         } else if (entry.type === 'transparency_cleanup') {
@@ -2070,6 +2230,14 @@ function updateSwapHistoryDisplay() {
                 <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #6bc5ff;">R</span>
                 <span style="color: #666; flex: 1;">Resize ${entry.fromWidth}x${entry.fromHeight} -> ${entry.toWidth}x${entry.toHeight}${percentText}</span>
                 <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this resize">x</button>
+            </div>`;
+        }
+
+        if (entry.type === 'pixel_grid_downscale') {
+            return `<div style="display: flex; align-items: center; gap: 5px; margin: 3px 0;">
+                <span style="display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; border: 1px solid #555; border-radius: 2px; font-size: 9px; color: #6bc5ff;">D</span>
+                <span style="color: #666; flex: 1;">True pixel size ${entry.fromWidth}x${entry.fromHeight} -> ${entry.toWidth}x${entry.toHeight} (${Math.round(entry.cellSize * 100) / 100}px)</span>
+                <button onclick="undoSingleSwap(${i})" style="padding: 2px 6px; font-size: 10px; background: #555; border-radius: 3px; cursor: pointer;" title="Undo this downscale">x</button>
             </div>`;
         }
 

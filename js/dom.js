@@ -82,6 +82,10 @@ export const elements = {
     resizeKeepAspectCheckbox: document.getElementById('resizeKeepAspectCheckbox'),
     applyResizeBtn: document.getElementById('applyResizeBtn'),
     resizeStatus: document.getElementById('resizeStatus'),
+    detectPixelGridBtn: document.getElementById('detectPixelGridBtn'),
+    pixelGridSizeInput: document.getElementById('pixelGridSizeInput'),
+    pixelGridInfo: document.getElementById('pixelGridInfo'),
+    applyPixelGridBtn: document.getElementById('applyPixelGridBtn'),
 
     // Contexts
     ctx: document.getElementById('previewCanvas').getContext('2d'),
